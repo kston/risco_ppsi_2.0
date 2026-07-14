@@ -20,16 +20,6 @@ Disponibilizar uma interface simples para identificação, avaliação e classif
 - CSS3
 - JavaScript
 
-## Estrutura do Projeto
-
-```
-.
-├── index.html
-├── css/
-├── js/
-├── images/
-└── README.md
-```
 
 ## Como executar
 

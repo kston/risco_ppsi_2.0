@@ -25,7 +25,7 @@ Disponibilizar uma interface simples para identificação, avaliação e classif
 
 Não é necessária instalação.
 
-Basta abrir o arquivo `index.html` em um navegador ou acessar a versão publicada pelo GitHub Pages.
+Basta abrir o arquivo `index.html` em um navegador ou acessar a versão publicada pelo GitHub Pages (https://kston.github.io/risco_ppsi_2.0/).
 
 ## Publicação
 

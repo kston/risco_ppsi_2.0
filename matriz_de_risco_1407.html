@@ -1,0 +1,2786 @@
+gt
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Análise de Riscos de Segurança da Informação — PPSI 2.0</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+    :root {
+      --bg: #0b0f1a;
+      --surface: #111827;
+      --surface2: #0d1620;
+      --border: #1e2d42;
+      --accent: #00c8ff;
+      --accent2: #0066ff;
+      --danger: #ff3e5e;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --radius: 6px;
+
+      --critico: #ff3355;
+      --elevado: #ff8c00;
+      --moderado: #f0c040;
+      --baixo: #44bb88;
+      --muito-baixo: #4499cc;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      padding: 0 0 60px;
+    }
+
+    header {
+      padding: 40px 48px 32px;
+      border-bottom: 1px solid var(--border);
+      background: linear-gradient(180deg, #0d1525 0%, var(--bg) 100%);
+    }
+
+    .eyebrow {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    h1 {
+      font-size: clamp(22px, 3vw, 34px);
+      font-weight: 700;
+    }
+
+    h1 span {
+      color: var(--accent);
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      color: var(--text);
+      font-size: 14px;
+      max-width: 620px;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 48px 0;
+    }
+
+    /* ── Group grid ── */
+    #group-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 14px;
+    }
+
+    .group-btn {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: flex-start;
+      gap: 14px;
+      padding: 18px 20px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      transition: border-color .2s, background .2s, transform .15s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .group-btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0, 200, 255, .06) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+
+    .group-btn:hover::before {
+      opacity: 1;
+    }
+
+    .group-btn:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .group-btn.active {
+      border-color: var(--accent);
+      background: #0d2030;
+    }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      background: rgba(0, 200, 255, .1);
+    }
+
+    .btn-label {
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--text);
+    }
+
+    .btn-count {
+      margin-top: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text);
+    }
+
+    /* ── Risk panel ── */
+    #risk-panel {
+      margin-top: 36px;
+      display: none;
+      animation: fadeUp .25s ease;
+    }
+
+    @keyframes fadeUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .panel-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .panel-title span {
+      color: var(--accent);
+    }
+
+    .close-btn {
+      all: unset;
+      cursor: pointer;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: var(--text);
+      letter-spacing: .05em;
+      transition: color .15s;
+    }
+
+    .close-btn:hover {
+      color: var(--danger);
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent), transparent);
+      margin-bottom: 20px;
+      opacity: .5;
+    }
+
+    /* ── Risk list ── */
+    #risk-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .group-intro {
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      margin-bottom: 6px;
+    }
+
+    .risk-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      animation: fadeUp .2s ease both;
+    }
+
+    .risk-card-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+    }
+
+    .risk-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--muted);
+    }
+
+    .risk-index {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--text);
+      min-width: 20px;
+    }
+
+    .risk-name {
+      flex: 1;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .risk-actions {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 14px 16px;
+      flex-wrap: wrap;
+    }
+
+    .action-btn {
+      all: unset;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 13px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: var(--text);
+      transition: all .15s;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    .action-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0, 200, 255, .06);
+    }
+
+    .action-btn.open {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(0, 200, 255, .08);
+    }
+
+    .action-btn .chev {
+      font-size: 9px;
+      transition: transform .2s;
+    }
+
+    .action-btn.open .chev {
+      transform: rotate(180deg);
+    }
+
+    .risk-level-pill {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      display: none;
+    }
+
+    /* ── Expandable sections ── */
+    .expand-section {
+      display: none;
+      padding: 0 16px 16px 16px;
+      border-top: 1px solid var(--border);
+      animation: fadeUp .18s ease;
+    }
+
+    .expand-section.open {
+      display: block;
+      padding-top: 14px;
+    }
+
+    /* Risk level calculator */
+    .calc-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .calc-field label {
+      display: block;
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 6px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .calc-field select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 9px 10px;
+      border-radius: 5px;
+      font-size: 13px;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      transition: border-color .15s;
+    }
+
+    .calc-field select:hover,
+    .calc-field select:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .level-result {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+      margin-bottom: 10px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .level-result .lr-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .info-toggle {
+      all: unset;
+      cursor: pointer;
+      font-size: 11px;
+      color: var(--accent);
+      font-family: 'JetBrains Mono', monospace;
+      text-decoration: underline;
+      text-decoration-color: rgba(0, 200, 255, .3);
+    }
+
+    .info-toggle:hover {
+      text-decoration-color: var(--accent);
+    }
+
+    .info-box {
+      display: none;
+      margin-top: 12px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+    }
+
+    .info-box.open {
+      display: block;
+      animation: fadeUp .15s ease;
+    }
+
+    .info-box h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--accent);
+      margin-bottom: 10px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .info-box h4:not(:first-child) {
+      margin-top: 18px;
+    }
+
+    .info-row {
+      display: grid;
+      grid-template-columns: 110px 1fr;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 11.5px;
+      line-height: 1.5;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-row .ir-label {
+      font-weight: 700;
+    }
+
+    .info-row .ir-desc {
+      color: var(--text);
+    }
+
+    /* Measures section */
+    .measure-card-wrap {
+      margin-bottom: 7px;
+    }
+
+    .measure-card {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 11px 14px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-left-width: 3px;
+      border-left-color: var(--accent);
+      border-radius: 5px;
+    }
+
+    .measure-card.clickable {
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+
+    .measure-card.clickable:hover {
+      background: rgba(0, 200, 255, .06);
+      border-color: var(--accent);
+    }
+
+    .measure-id {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent);
+      min-width: 34px;
+      flex-shrink: 0;
+      padding-top: 1px;
+    }
+
+    .measure-text {
+      font-size: 12.5px;
+      line-height: 1.55;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .measure-chev {
+      font-size: 9px;
+      color: var(--accent);
+      flex-shrink: 0;
+      transition: transform .2s;
+      padding-top: 3px;
+    }
+
+    .measure-chev.open {
+      transform: rotate(180deg);
+    }
+
+    .measure-detail {
+      display: none;
+      padding: 12px 14px;
+      margin-top: 4px;
+      background: #081019;
+      border: 1px dashed var(--border);
+      border-radius: 5px;
+      animation: fadeUp .15s ease;
+    }
+
+    .measure-detail.open {
+      display: block;
+    }
+
+    .measure-detail-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .measure-detail-text {
+      font-size: 12px;
+      line-height: 1.6;
+      color: var(--text);
+    }
+
+    /* ── Saved tag ── */
+    .saved-tag {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--baixo);
+      opacity: 0;
+      transition: opacity .3s;
+      flex-shrink: 0;
+    }
+
+    .saved-tag.show {
+      opacity: 1;
+    }
+
+    /* ── Official matrix table ── */
+    .matrix-wrap {
+      overflow-x: auto;
+      margin-bottom: 6px;
+    }
+
+    .risk-matrix-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 10.5px;
+      table-layout: fixed;
+    }
+
+    .risk-matrix-table th,
+    .risk-matrix-table td {
+      border: 1px solid var(--border);
+      text-align: center;
+      padding: 6px 4px;
+    }
+
+    .mx-head {
+      background: #0a7a4a;
+      color: #fff;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+
+    .mx-corner {
+      background: var(--surface2);
+      border: none;
+    }
+
+    .mx-prob {
+      background: var(--surface2);
+      color: var(--text);
+      font-weight: 600;
+      font-size: 10px;
+    }
+
+    .mx-label-impacto {
+      background: #0a7a4a;
+      color: #fff;
+      font-weight: 700;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      text-align: center;
+      vertical-align: middle;
+      padding: 6px 4px;
+    }
+
+    .mx-impacto-text {
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      white-space: nowrap;
+    }
+
+    .mx-impact {
+      background: #0a7a4a;
+      color: #fff;
+      font-weight: 700;
+      font-size: 10px;
+      white-space: nowrap;
+    }
+
+    .mx-cell {
+      font-weight: 700;
+      font-size: 9.5px;
+      line-height: 1.3;
+    }
+
+    /* ── Dashboard ── */
+    #dashboard-section {
+      margin-top: 48px;
+      padding-top: 36px;
+      border-top: 1px solid var(--border);
+    }
+
+    .dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .dash-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .dash-title span {
+      color: var(--accent);
+    }
+
+    .dash-header-btns {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .dash-action-btn {
+      all: unset;
+      cursor: pointer;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 7px 14px;
+      border-radius: 5px;
+      border: 1px solid var(--border);
+      transition: all .15s;
+    }
+
+    .dash-btn-export {
+      color: var(--accent);
+      border-color: rgba(0, 200, 255, .3);
+    }
+
+    .dash-btn-export:hover {
+      background: rgba(0, 200, 255, .08);
+      border-color: var(--accent);
+    }
+
+    .dash-btn-reset {
+      color: var(--elevado);
+      border-color: rgba(255, 140, 0, .3);
+    }
+
+    .dash-btn-reset:hover {
+      background: rgba(255, 140, 0, .08);
+      border-color: var(--elevado);
+    }
+
+    .dash-empty {
+      padding: 30px;
+      text-align: center;
+      color: var(--text);
+      font-size: 13px;
+      background: var(--surface);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+
+    .dash-summary {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+      margin-bottom: 28px;
+    }
+
+    .dash-stat {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left-width: 3px;
+      border-radius: 6px;
+      padding: 14px 10px;
+      text-align: center;
+    }
+
+    .dash-stat-total {
+      border-left-color: var(--accent) !important;
+    }
+
+    .dash-stat-num {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .dash-stat-label {
+      font-size: 9.5px;
+      color: var(--text);
+      margin-top: 4px;
+      line-height: 1.3;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .dash-level-block {
+      margin-bottom: 24px;
+    }
+
+    .dash-level-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 700;
+      padding-bottom: 8px;
+      border-bottom: 1px solid;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: .03em;
+    }
+
+    .dash-level-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dash-level-count {
+      color: var(--text);
+      font-weight: 500;
+      text-transform: none;
+    }
+
+    .dash-groups {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 10px;
+    }
+
+    .dash-group-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+
+    .dash-group-name {
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .dash-risk-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .dash-risk-list li {
+      list-style: none;
+    }
+
+    .dash-risk-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      padding: 5px 6px;
+      margin: 0 -6px;
+      border-radius: 4px;
+      transition: background .15s;
+    }
+
+    .dash-risk-item:hover {
+      background: rgba(0, 200, 255, .06);
+    }
+
+    .dash-risk-chev {
+      font-size: 9px;
+      color: var(--accent);
+      transition: transform .2s;
+      flex-shrink: 0;
+      width: 10px;
+    }
+
+    .dash-risk-chev.open {
+      transform: rotate(90deg);
+    }
+
+    .dash-risk-text {
+      font-size: 11.5px;
+      color: var(--text);
+      line-height: 1.4;
+      flex: 1;
+    }
+
+    .dash-risk-item:hover .dash-risk-text {
+      color: var(--text);
+    }
+
+    .dash-risk-count {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: var(--accent);
+      background: rgba(0, 200, 255, .1);
+      padding: 2px 6px;
+      border-radius: 3px;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    .dash-measures {
+      display: none;
+      flex-direction: column;
+      gap: 6px;
+      padding: 8px 0 6px 18px;
+      animation: fadeUp .15s ease;
+    }
+
+    .dash-measures.open {
+      display: flex;
+    }
+
+    .dash-measures .measure-card-wrap {
+      margin-bottom: 0;
+    }
+
+    .dash-measures .measure-card {
+      padding: 9px 12px;
+    }
+
+    .dash-measures .measure-id {
+      font-size: 10px;
+      min-width: 30px;
+    }
+
+    .dash-measures .measure-text {
+      font-size: 11.5px;
+    }
+
+    .dash-measures .measure-detail {
+      padding: 10px 12px;
+    }
+
+    .dash-measures .measure-detail-text {
+      font-size: 11.5px;
+    }
+
+    @media (max-width: 900px) {
+      .dash-summary {
+        grid-template-columns: repeat(3, 1fr);
+      }
+    }
+
+    @media (max-width: 600px) {
+
+      header,
+      main {
+        padding-left: 20px;
+        padding-right: 20px;
+      }
+
+      #group-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .calc-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .info-row {
+        grid-template-columns: 1fr;
+      }
+
+      .dash-summary {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <p class="eyebrow">Gestão de Riscos · PPSI 2.0</p>
+    <h1>Análise de Riscos de <span>Segurança da Informação</span> — PPSI 2.0</h1>
+    <p class="subtitle">Esta página destina-se à aplicação do PPSI 2.0 sob a perspectiva da análise de riscos de
+      segurança da informação, apoiando a identificação, avaliação e tratamento dos riscos de segurança da informação e
+      privacidade.</p>
+    <p class="subtitle">Selecione um grupo, avalie o Impacto e a Probabilidade de cada risco para determinar o Nível de
+      Risco e consultar as medidas de controle aplicáveis.</p>
+  </header>
+
+  <main>
+    <div id="group-grid"></div>
+
+    <div id="risk-panel">
+      <div class="panel-header">
+        <div class="panel-title" id="panel-title"></div>
+        <button class="close-btn" onclick="closePanel()">✕ fechar</button>
+      </div>
+      <div class="divider"></div>
+      <div id="risk-list"></div>
+    </div>
+
+    <div id="dashboard-section">
+      <div class="dash-header">
+        <div class="dash-title">Painel de <span>Riscos Avaliados</span></div>
+        <div class="dash-header-btns">
+          <button class="dash-action-btn dash-btn-export" onclick="exportToExcel()">⬇ Exportar Excel</button>
+          <button class="dash-action-btn dash-btn-reset" onclick="reiniciarAnalise()">↺ Reiniciar Análise</button>
+        </div>
+      </div>
+      <div id="dashboard"></div>
+    </div>
+  </main>
+
+  <script>
+
+    // ═══════════════════════════════════════════════════════════
+    // DADOS — extraídos do documento requesitos.docx
+    // ═══════════════════════════════════════════════════════════
+
+    // Tabela: Impacto x Probabilidade -> Nível de Risco
+    // (conforme matriz oficial: Impacto nas linhas, Probabilidade nas colunas)
+    const RISK_MATRIX = {
+      "Muito alto|Muito baixa": "Risco Moderado",
+      "Muito alto|Baixa": "Risco Moderado",
+      "Muito alto|Média": "Risco Elevado",
+      "Muito alto|Alta": "Risco Crítico",
+      "Muito alto|Muito alta": "Risco Crítico",
+
+      "Alto|Muito baixa": "Risco Baixo",
+      "Alto|Baixa": "Risco Moderado",
+      "Alto|Média": "Risco Elevado",
+      "Alto|Alta": "Risco Elevado",
+      "Alto|Muito alta": "Risco Crítico",
+
+      "Médio|Muito baixa": "Risco Baixo",
+      "Médio|Baixa": "Risco Moderado",
+      "Médio|Média": "Risco Moderado",
+      "Médio|Alta": "Risco Elevado",
+      "Médio|Muito alta": "Risco Elevado",
+
+      "Baixo|Muito baixa": "Risco Baixo",
+      "Baixo|Baixa": "Risco Baixo",
+      "Baixo|Média": "Risco Moderado",
+      "Baixo|Alta": "Risco Moderado",
+      "Baixo|Muito alta": "Risco Moderado",
+
+      "Muito baixo|Muito baixa": "Risco Baixo",
+      "Muito baixo|Baixa": "Risco Baixo",
+      "Muito baixo|Média": "Risco Baixo",
+      "Muito baixo|Alta": "Risco Baixo",
+      "Muito baixo|Muito alta": "Risco Moderado",
+    };
+
+    // Mesma matriz em formato de grade, para renderização visual em "Ver definições"
+    const RISK_MATRIX_GRID = {
+      impacts: ["Muito alto", "Alto", "Médio", "Baixo", "Muito baixo"],
+      probs: ["Muito baixa", "Baixa", "Média", "Alta", "Muito alta"],
+    };
+
+    const LEVEL_COLOR = {
+      "Risco Crítico": "#ff3355",
+      "Risco Elevado": "#ff8c00",
+      "Risco Moderado": "#f0c040",
+      "Risco Baixo": "#44bb88",
+      "Risco Muito Baixo": "#4499cc",
+    };
+
+    const IMPACT_OPTIONS = ["Muito alto", "Alto", "Médio", "Baixo", "Muito baixo"];
+    const PROB_OPTIONS = ["Muito alta", "Alta", "Média", "Baixa", "Muito baixa"];
+
+    const IMPACT_INFO = [
+      { label: "MUITO BAIXO", desc: "Impacto mínimo sobre ativos de informação, sem prejuízo relevante à confidencialidade, integridade ou disponibilidade das informações e serviços." },
+      { label: "BAIXO", desc: "Impacto limitado, com prejuízo restrito a ativos de informação ou serviços de baixa criticidade, sem efeitos significativos para a organização." },
+      { label: "MÉDIO", desc: "Impacto moderado, com comprometimento parcial da confidencialidade, integridade ou disponibilidade de informações e serviços, exigindo ações de tratamento e recuperação." },
+      { label: "ALTO", desc: "Impacto significativo, com comprometimento relevante da confidencialidade, integridade ou disponibilidade de informações e serviços essenciais, afetando o desempenho das atividades institucionais." },
+      { label: "MUITO ALTO", desc: "Impacto crítico, com comprometimento grave ou generalizado da confidencialidade, integridade ou disponibilidade de informações e serviços essenciais, causando prejuízos expressivos ao cumprimento da missão institucional, à conformidade legal ou à continuidade das operações." },
+    ];
+
+    const PROB_INFO = [
+      { label: "MUITO BAIXA", desc: "Rara. O evento poderá ocorrer, mas em situações excepcionais." },
+      { label: "BAIXA", desc: "Improvável. De forma ocasional o evento poderá ocorrer, mas há poucas chances de acontecer." },
+      { label: "MÉDIA", desc: "Possível. O evento poderá ocorrer, pois há chances razoáveis de acontecer." },
+      { label: "ALTA", desc: "Provável. O evento tende a ocorrer, pois há muitas chances de acontecer." },
+      { label: "MUITO ALTA", desc: "Praticamente certa. O evento deve ocorrer. Somente não acontecerá em situações excepcionais." },
+    ];
+
+    const RISK_LEVEL_INFO = [
+      { label: "Risco Baixo", desc: "Exposição ao risco considerada aceitável, com potencial limitado de afetar a confidencialidade, integridade, disponibilidade ou autenticidade das informações. Pode ser administrada por meio dos controles existentes e submetida a monitoramento periódico." },
+      { label: "Risco Moderado", desc: "Exposição ao risco que pode gerar impactos relevantes sobre ativos de informação, processos ou serviços institucionais. Requer acompanhamento e avaliação da necessidade de adoção de medidas adicionais de tratamento, observados a criticidade dos ativos e o apetite ao risco da organização." },
+      { label: "Risco Elevado", desc: "Exposição ao risco acima do nível desejável para a organização, com potencial de comprometer significativamente a confidencialidade, integridade, disponibilidade ou autenticidade das informações. Exige tratamento prioritário, com definição de ações, responsáveis e prazos para redução do risco." },
+      { label: "Risco Crítico", desc: "Exposição ao risco considerada inaceitável, com potencial de causar comprometimento grave ou generalizado da confidencialidade, integridade, disponibilidade ou autenticidade das informações, afetando serviços essenciais, a continuidade das operações, a conformidade legal ou a missão institucional. Requer tratamento imediato e monitoramento contínuo até sua redução a níveis aceitáveis." },
+    ];
+
+    // Grupos de risco -> riscos -> medidas (Nº da controle | Medida PPSI 2.0)
+    const DATA = {
+      "Gestão de Ativos e Inventário": {
+        icon: "🗂️",
+        risks: [
+          {
+            risk: "Ativos institucionais não identificados", measures: [
+              { id: "1.1", text: "O órgão estabelece e mantém um inventário detalhado de ativos institucionais?" },
+              { id: "1.3", text: "O órgão usa ferramenta de descoberta ativa para identificação de ativos institucionais?" },
+            ]
+          },
+          {
+            risk: "Desconhecimento da rede", measures: [
+              { id: "12.4", text: "O órgão elabora e mantém diagramas de arquitetura?" },
+            ]
+          },
+          {
+            risk: "Desconhecimento dos dados institucionais", measures: [
+              { id: "3.2", text: "O órgão estabelece e mantém um inventário de dados?" },
+            ]
+          },
+          {
+            risk: "Inventário incompleto ou impreciso", measures: [
+              { id: "2.4", text: "O órgão utiliza ferramentas automatizadas de inventário de soluções de software?" },
+            ]
+          },
+          {
+            risk: "Permanência de ativos desconhecidos na rede", measures: [
+              { id: "1.5", text: "O órgão usa ferramenta de descoberta passiva para identificação de ativos institucionais?" },
+            ]
+          },
+          {
+            risk: "Contas não identificadas no ambiente", measures: [
+              { id: "5.1", text: "O órgão estabelece e mantém um inventário de contas?" },
+            ]
+          },
+          {
+            risk: "Inventário desatualizado de ativos", measures: [
+              { id: "1.4", text: "O órgão usa o protocolo de configuração dinâmica de host (DHCP) para atualizar o inventário de ativos institucionais?" },
+            ]
+          },
+          {
+            risk: "Contas de serviço desconhecidas", measures: [
+              { id: "5.5", text: "O órgão estabelece e mantém um inventário de contas de serviço?" },
+            ]
+          },
+          {
+            risk: "Exploração de ativos não gerenciados", measures: [
+              { id: "1.2", text: "O órgão trata ativos institucionais não autorizados?" },
+            ]
+          },
+          {
+            risk: "Softwares não identificados no ambiente", measures: [
+              { id: "2.1", text: "O órgão estabelece e mantém um inventário de soluções de software?" },
+            ]
+          },
+        ]
+      },
+
+      "Gestão de Identidade e Controle de Acesso": {
+        icon: "🔑",
+        risks: [
+          {
+            risk: "Acesso indevido a dados", measures: [
+              { id: "3.11", text: "O órgão criptografa os dados críticos que estão em repouso?" },
+              { id: "3.3", text: "O órgão configura listas de controle de acesso a dados?" },
+            ]
+          },
+          {
+            risk: "Acesso administrativo inseguro", measures: [
+              { id: "12.3", text: "O órgão gerencia a infraestrutura de rede com segurança?" },
+              { id: "4.6", text: "O órgão gerencia com segurança os ativos institucionais e soluções de software?" },
+            ]
+          },
+          {
+            risk: "Acesso indevido aos backups", measures: [
+              { id: "11.3", text: "O órgão protege os dados de recuperação?" },
+            ]
+          },
+          {
+            risk: "Acesso indevido não identificado", measures: [
+              { id: "3.14", text: "O órgão registra o acesso aos dados críticos?" },
+            ]
+          },
+          {
+            risk: "Acesso indevido por sessão aberta", measures: [
+              { id: "4.3", text: "O órgão configura o bloqueio automático de sessão nos ativos institucionais?" },
+            ]
+          },
+          {
+            risk: "Acesso não autorizado por credenciais vazadas", measures: [
+              { id: "6.3", text: "O órgão exige autenticação multifator (MFA) para soluções de software expostas externamente?" },
+            ]
+          },
+          {
+            risk: "Acesso remoto inseguro", measures: [
+              { id: "12.7", text: "O órgão assegura que os dispositivos remotos utilizem uma VPN e se conectam em uma infraestrutura de autenticação, autorização e auditoria (AAA)?" },
+            ]
+          },
+          {
+            risk: "Comprometimento de contas privilegiadas", measures: [
+              { id: "12.8", text: "O órgão utiliza e mantém recursos computacionais dedicados para todas as atividades administrativas de TI?" },
+              { id: "5.4", text: "O órgão limita os privilégios de administrador às contas de administrador dedicadas?" },
+            ]
+          },
+          {
+            risk: "Comprometimento de múltiplos sistemas com uma única credencial", measures: [
+              { id: "5.2", text: "O órgão promove ações para evitar a reutilização de senhas?" },
+            ]
+          },
+          {
+            risk: "Concessão indevida de acessos", measures: [
+              { id: "6.1", text: "O órgão estabelece um processo de concessão de acesso?" },
+            ]
+          },
+          {
+            risk: "Dificuldade de controle e auditoria de acessos", measures: [
+              { id: "5.6", text: "O órgão centraliza a gestão de contas?" },
+            ]
+          },
+          {
+            risk: "Falha no controle de acesso", measures: [
+              { id: "12.5", text: "O órgão centraliza a autenticação, a autorização e a auditoria (AAA) de rede?" },
+            ]
+          },
+          {
+            risk: "Inconsistência de permissões", measures: [
+              { id: "6.7", text: "O órgão centraliza o controle de acesso?" },
+            ]
+          },
+          {
+            risk: "Invasão com credenciais válidas", measures: [
+              { id: "6.4", text: "O órgão exige autenticação multifator (MFA) para acesso remoto à rede?" },
+            ]
+          },
+          {
+            risk: "Reutilização de credenciais", measures: [
+              { id: "14.3", text: "O órgão conscientiza os agentes públicos nas melhores práticas de autenticação?" },
+            ]
+          },
+          {
+            risk: "Uso indevido de contas abandonadas", measures: [
+              { id: "5.3", text: "O órgão desabilita ou exclui contas inativas?" },
+            ]
+          },
+          {
+            risk: "Uso indevido de contas padrão (ex: admin/root)", measures: [
+              { id: "4.7", text: "O órgão gerencia contas padrão?" },
+            ]
+          },
+          {
+            risk: "Violação do princípio do menor privilégio", measures: [
+              { id: "6.8", text: "O órgão define e mantém o controle de acesso baseado em funções?" },
+            ]
+          },
+        ]
+      },
+
+      "Governança, Estratégia e Conformidade": {
+        icon: "📋",
+        risks: [
+          {
+            risk: "Aumento do risco de fraude", measures: [
+              { id: "0.5", text: "O órgão ou entidade designou o responsável pela gestão da integridade?" },
+            ]
+          },
+          {
+            risk: "Ausência de liderança na resposta a incidentes", measures: [
+              { id: "17.1", text: "O órgão designou agente responsável, e respectivo substituto, para gerenciar a Equipe de Prevenção, Tratamento e Resposta a Incidentes Cibernéticos (ETIR)?" },
+            ]
+          },
+          {
+            risk: "Decisões erradas", measures: [
+              { id: "25.5", text: "O órgão implementa medidas para garantir aos titulares a exatidão, clareza, relevância e atualização dos dados pessoais, de acordo com a necessidade e para cumprir a finalidade do tratamento?" },
+            ]
+          },
+          {
+            risk: "Decisões sem avaliação de privacidade", measures: [
+              { id: "21.5", text: "O órgão solicita assistência e orientação do encarregado quando realiza atividades e toma decisões estratégicas referentes ao tratamento de dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Deficiência na governança de dados e privacidade", measures: [
+              { id: "0.7", text: "O órgão ou entidade instituiu o comitê de privacidade?" },
+              { id: "21.1", text: "O órgão provê os meios necessários para que o encarregado exerça suas atividades e atribuições?" },
+              { id: "3.1", text: "O órgão estabelece e mantém um processo de gestão de dados?" },
+            ]
+          },
+          {
+            risk: "Deficiência na governança de segurança da informação", measures: [
+              { id: "0.1", text: "O órgão ou entidade possui alta administração que estabelece e mantém a estrutura de governança em privacidade e segurança da informação?" },
+              { id: "0.11", text: "O órgão ou entidade instituiu a Política de Segurança da Informação?" },
+              { id: "0.3", text: "O órgão ou entidade designou o gestor de segurança da informação?" },
+              { id: "0.9", text: "O órgão ou entidade instituiu o Programa de Governança em Segurança da Informação?" },
+            ]
+          },
+          {
+            risk: "Descoordenação das ações de TIC", measures: [
+              { id: "0.2", text: "O órgão ou entidade designou o gestor de tecnologia da informação e comunicação?" },
+            ]
+          },
+          {
+            risk: "Descumprimento de direitos dos titulares", measures: [
+              { id: "21.4", text: "O órgão divulga publicamente e mantém atualizadas a identidade e as informações de contato do encarregado e de seu substituto?" },
+            ]
+          },
+          {
+            risk: "Exposição a sanções por descumprimento de requisitos legais e regulatórios", measures: [
+              { id: "0.16", text: "O órgão ou entidade estabeleceu e mantém processo de gestão de conformidade?" },
+              { id: "23.2", text: "O órgão assegura a conformidade das operações às hipóteses de tratamento de dados pessoais (bases legais)?" },
+              { id: "23.5", text: "O órgão avalia e aplica medidas para que o tratamento de dados pessoais de crianças e adolescentes ocorra no seu melhor interesse?" },
+              { id: "24.3", text: "O órgão informa a ANPD ao realizar o compartilhamento de dados pessoais com pessoas jurídicas de direito privado?" },
+              { id: "24.5", text: "O órgão observa as regras aplicáveis ao realizar operações de transferência internacional de dados pessoais?" },
+              { id: "25.9", text: "O órgão assegura que o tratamento de dados pessoais não seja realizado para fins discriminatórios ilícitos ou abusivos?" },
+            ]
+          },
+          {
+            risk: "Falhas na retenção e conservação de registros", measures: [
+              { id: "3.4", text: "O órgão aplica retenção de dados?" },
+              { id: "8.10", text: "O órgão retém os logs de auditoria?" },
+            ]
+          },
+          {
+            risk: "Falta de integração entre áreas", measures: [
+              { id: "0.6", text: "O órgão ou entidade instituiu o comitê de segurança da informação?" },
+            ]
+          },
+          {
+            risk: "Ilegalidade", measures: [
+              { id: "24.2", text: "O órgão, ao realizar compartilhamento de dados pessoais com outros órgãos e entidades públicos, verifica se o compartilhamento atende a finalidades específicas de execução de políticas públicas e atribuições legais?" },
+            ]
+          },
+          {
+            risk: "Indefinição de responsabilidades", measures: [
+              { id: "17.5", text: "O órgão atribui funções e responsabilidades para gestão de incidentes de segurança da informação?" },
+            ]
+          },
+          {
+            risk: "Não conformidade", measures: [
+              { id: "20.3", text: "O órgão implementa ações para capacitação sobre privacidade e proteção de dados pessoais?" },
+              { id: "25.6", text: "O órgão assegura aos titulares informações claras, precisas e facilmente acessíveis sobre os tratamentos de dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Não conformidade com a LGPD", measures: [
+              { id: "0.10", text: "O órgão ou entidade instituiu o Programa de Governança em Privacidade?" },
+              { id: "0.12", text: "O órgão ou entidade instituiu a Política de Privacidade?" },
+              { id: "0.4", text: "O órgão ou entidade designou o encarregado pelo tratamento de dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Penalidades", measures: [
+              { id: "21.3", text: "O órgão possui processo para atendimento aos direitos dos titulares de dados pessoais?" },
+              { id: "23.3", text: "O órgão elabora o Relatório de Impacto à Proteção de Dados Pessoais (RIPD) dos processos de tratamento de dados pessoais que podem gerar riscos às liberdades civis e aos direitos fundamentais?" },
+              { id: "25.10", text: "O órgão adota medidas de responsabilização e prestação de contas, capazes de evidenciar o cumprimento das normas de proteção de dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Priorização inadequada de riscos", measures: [
+              { id: "15.3", text: "O órgão categoriza provedores de serviços?" },
+            ]
+          },
+          {
+            risk: "Responsabilização", measures: [
+              { id: "22.1", text: "O órgão estabelece em contrato, convênio ou instrumento congênere os papéis e responsabilidades dos agentes de tratamento envolvidos?" },
+              { id: "25.8", text: "O órgão implementa medidas para prevenir a ocorrência de danos em virtude do tratamento de dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Risco jurídico", measures: [
+              { id: "22.4", text: "O órgão incluiu cláusulas protetivas de dados pessoais nos contratos, acordos de cooperação e instrumentos congêneres vigentes em que há tratamento de dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Riscos não identificados", measures: [
+              { id: "0.13", text: "O órgão ou entidade estabeleceu e mantém processo de gestão de riscos?" },
+              { id: "16.14", text: "O órgão realiza a modelagem de ameaças?" },
+            ]
+          },
+          {
+            risk: "Violação dos direitos dos titulares de dados pessoais", measures: [
+              { id: "21.2", text: "O órgão disponibiliza meios céleres, eficazes e adequados para viabilizar a comunicação dos titulares com o encarregado e o exercício de direitos?" },
+            ]
+          },
+        ]
+      },
+
+      "Malware, Phishing e Execução Maliciosa": {
+        icon: "🦠",
+        risks: [
+          {
+            risk: "Acesso a recursos maliciosos na Internet", measures: [
+              { id: "9.2", text: "O órgão usa serviços de filtragem de Sistema de Nomes de Domínio (DNS)?" },
+              { id: "9.3", text: "O órgão mantém e aplica filtros de URL baseados em rede?" },
+            ]
+          },
+          {
+            risk: "Ataques externos bem-sucedidos", measures: [
+              { id: "18.2", text: "O órgão realiza testes de intrusão externos periódicos (pentest)?" },
+            ]
+          },
+          {
+            risk: "Ataques zero-day", measures: [
+              { id: "10.7", text: "O órgão utiliza software antimalware baseado em comportamento?" },
+            ]
+          },
+          {
+            risk: "Entrada de malware não detectada", measures: [
+              { id: "10.4", text: "O órgão configura a varredura antimalware automática de mídias removíveis?" },
+            ]
+          },
+          {
+            risk: "Entrada de malware via anexos", measures: [
+              { id: "9.6", text: "O órgão bloqueia tipos de arquivo desnecessários?" },
+            ]
+          },
+          {
+            risk: "Execução automática de malware", measures: [
+              { id: "10.3", text: "O órgão desabilita a execução e reprodução automática para mídias removíveis?" },
+            ]
+          },
+          {
+            risk: "Execução de código não confiável", measures: [
+              { id: "2.6", text: "O órgão possui uma lista de bibliotecas de software autorizadas?" },
+            ]
+          },
+          {
+            risk: "Execução de comandos maliciosos não detectada", measures: [
+              { id: "8.8", text: "O órgão coleta logs de auditoria de linha de comando?" },
+            ]
+          },
+          {
+            risk: "Execução de conexões maliciosas", measures: [
+              { id: "4.5", text: "O órgão implementa e gerencia um firewall em dispositivos do usuário final?" },
+            ]
+          },
+          {
+            risk: "Execução de exploits", measures: [
+              { id: "10.5", text: "O órgão habilita funções antiexploração (anti-exploit)?" },
+            ]
+          },
+          {
+            risk: "Execução de scripts maliciosos", measures: [
+              { id: "2.7", text: "O órgão possui uma lista de scripts autorizados?" },
+            ]
+          },
+          {
+            risk: "Execução de softwares maliciosos", measures: [
+              { id: "2.3", text: "O órgão trata o uso de soluções de software não autorizadas?" },
+            ]
+          },
+          {
+            risk: "Execução de softwares não autorizados", measures: [
+              { id: "2.5", text: "O órgão possui uma lista de soluções de software autorizadas?" },
+            ]
+          },
+          {
+            risk: "Falha na detecção e rastreabilidade de atividades maliciosas na Internet", measures: [
+              { id: "8.6", text: "O órgão coleta logs de auditoria de consulta do Sistema de Nomes de Domínio (DNS)?" },
+              { id: "8.7", text: "O órgão coleta logs de auditoria de requisição de URL?" },
+            ]
+          },
+          {
+            risk: "Infecção por malware", measures: [
+              { id: "10.1", text: "O órgão instala e mantém um software antimalware?" },
+            ]
+          },
+          {
+            risk: "Instalação de extensões maliciosas", measures: [
+              { id: "9.4", text: "O órgão restringe extensões desnecessárias ou não autorizadas de navegadores e clientes de e-mail?" },
+            ]
+          },
+          {
+            risk: "Malware não detectado em e-mails", measures: [
+              { id: "9.7", text: "O órgão implementa e mantém proteções antimalware nos servidores de e-mail?" },
+            ]
+          },
+          {
+            risk: "Phishing com domínio institucional", measures: [
+              { id: "9.5", text: "O órgão implementa o DMARC?" },
+            ]
+          },
+          {
+            risk: "Sucesso de phishing", measures: [
+              { id: "14.2", text: "O órgão conscientiza os agentes públicos para reconhecer ataques de engenharia social?" },
+            ]
+          },
+        ]
+      },
+
+      "Monitoramento, Detecção e Inteligência": {
+        icon: "📡",
+        risks: [
+          {
+            risk: "Ameaças persistentes não detectadas", measures: [
+              { id: "8.11", text: "O órgão conduz revisões de logs de auditoria?" },
+            ]
+          },
+          {
+            risk: "Ataques de rede não detectados", measures: [
+              { id: "13.3", text: "O órgão implanta soluções de detecção de intrusão de rede?" },
+            ]
+          },
+          {
+            risk: "Ataques em endpoints não detectados", measures: [
+              { id: "13.2", text: "O órgão implanta soluções de detecção de intrusão baseada em host?" },
+            ]
+          },
+          {
+            risk: "Ataques não detectados", measures: [
+              { id: "13.6", text: "O órgão coleta logs de fluxo de tráfego de rede?" },
+            ]
+          },
+          {
+            risk: "Baixa visibilidade de incidentes", measures: [
+              { id: "8.9", text: "O órgão centraliza os logs de auditoria?" },
+            ]
+          },
+          {
+            risk: "Controles ineficazes", measures: [
+              { id: "18.4", text: "O órgão valida as medidas de segurança?" },
+            ]
+          },
+          {
+            risk: "Dificuldade de correlação de eventos", measures: [
+              { id: "8.4", text: "O órgão padroniza a sincronização de tempo?" },
+            ]
+          },
+          {
+            risk: "Falha na detecção de incidentes", measures: [
+              { id: "13.1", text: "O órgão centraliza alertas de eventos de segurança?" },
+              { id: "13.11", text: "O órgão ajusta limites de alertas de eventos de segurança?" },
+              { id: "8.1", text: "O órgão estabelece e mantém um processo de gestão de logs de auditoria?" },
+              { id: "8.12", text: "O órgão coleta logs de provedores de serviços?" },
+            ]
+          },
+          {
+            risk: "Falha na identificação de ameaças", measures: [
+              { id: "10.2", text: "O órgão configura atualizações automáticas de assinatura antimalware?" },
+            ]
+          },
+          {
+            risk: "Falta de rastreabilidade", measures: [
+              { id: "3.8", text: "O órgão documenta os fluxos de dados?" },
+            ]
+          },
+          {
+            risk: "Impossibilidade de investigação", measures: [
+              { id: "8.2", text: "O órgão coleta logs de auditoria?" },
+            ]
+          },
+          {
+            risk: "Incidentes não detectados", measures: [
+              { id: "15.6", text: "O órgão monitora provedores de serviço?" },
+            ]
+          },
+          {
+            risk: "Inconsistência na proteção", measures: [
+              { id: "10.6", text: "O órgão gerencia o software antimalware de forma centralizada?" },
+            ]
+          },
+          {
+            risk: "Investigação incompleta", measures: [
+              { id: "8.5", text: "O órgão coleta logs de auditoria detalhados?" },
+            ]
+          },
+        ]
+      },
+
+      "Proteção de Dados e Privacidade": {
+        icon: "🔒",
+        risks: [
+          {
+            risk: "Ausência de mapeamento de dados pessoais", measures: [
+              { id: "19.1", text: "O órgão elabora e mantém processo para registrar as operações de tratamento de dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Coleta excessiva", measures: [
+              { id: "25.3", text: "O órgão trata somente os dados pessoais necessários para atingir as finalidades?" },
+            ]
+          },
+          {
+            risk: "Compartilhamento não controlado", measures: [
+              { id: "19.3", text: "O órgão inclui no registro das operações de tratamento de dados pessoais os agentes, os compartilhamentos, as transferências internacionais e as abrangências geográficas do tratamento?" },
+            ]
+          },
+          {
+            risk: "Desconhecimento do fluxo de dados", measures: [
+              { id: "19.2", text: "O órgão inclui no registro das operações de tratamento a descrição do fluxo dos dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Descumprimento de direitos dos titulares", measures: [
+              { id: "25.4", text: "O órgão assegura aos titulares consulta facilitada e gratuita sobre a forma e a duração do tratamento de seus dados, assim como o acesso aos seus dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Desvio de finalidade no tratamento de dados pessoais", measures: [
+              { id: "25.2", text: "O órgão realiza o tratamento de dados pessoais de forma compatível com as finalidades informadas ao titular, de acordo com o contexto do tratamento?" },
+            ]
+          },
+          {
+            risk: "Exfiltração de dados", measures: [
+              { id: "3.13", text: "O órgão implanta uma solução de prevenção contra perda de dados?" },
+            ]
+          },
+          {
+            risk: "Exposição acidental de dados", measures: [
+              { id: "14.5", text: "O órgão conscientiza os agentes públicos sobre as causas e ocorrências não intencionais que podem expor dados?" },
+              { id: "3.12", text: "O órgão segmenta o processamento e o armazenamento de dados com base na criticidade?" },
+            ]
+          },
+          {
+            risk: "Exposição de dados em caso de perda ou roubo", measures: [
+              { id: "3.6", text: "O órgão criptografa dados críticos em dispositivos de usuário final?" },
+            ]
+          },
+          {
+            risk: "Inconsistência de dados", measures: [
+              { id: "24.4", text: "O órgão comunica os agentes de tratamento, com os quais compartilhou dados pessoais, a correção, a eliminação, a anonimização ou o bloqueio dos referidos dados?" },
+            ]
+          },
+          {
+            risk: "Interceptação de dados", measures: [
+              { id: "14.8", text: "O órgão conscientiza os agentes públicos sobre os perigos de se conectar e transmitir dados organizacionais em redes inseguras?" },
+              { id: "3.10", text: "O órgão criptografa os dados críticos que estão em trânsito?" },
+            ]
+          },
+          {
+            risk: "Interceptação de tráfego", measures: [
+              { id: "12.6", text: "O órgão utiliza protocolos seguros de comunicação e gerenciamento de rede?" },
+            ]
+          },
+          {
+            risk: "Proteção insuficiente de dados críticos", measures: [
+              { id: "3.7", text: "O órgão estabelece e mantém um esquema de classificação de dados?" },
+            ]
+          },
+          {
+            risk: "Recuperação indevida de dados descartados", measures: [
+              { id: "3.5", text: "O órgão descarta dados com segurança?" },
+            ]
+          },
+          {
+            risk: "Reidentificação de dados", measures: [
+              { id: "23.6", text: "O órgão avalia e aplica medidas para anonimizar os dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Retenção indevida", measures: [
+              { id: "23.7", text: "O órgão assegura a conformidade do término do tratamento e da eliminação dos dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Tratamento indevido de dados pessoais", measures: [
+              { id: "23.1", text: "O órgão realiza tratamento de dados pessoais apenas para o atendimento de sua finalidade pública, na persecução do interesse público, com o objetivo de executar as competências legais ou cumprir as atribuições legais do serviço público?" },
+            ]
+          },
+          {
+            risk: "Vazamento de dados", measures: [
+              { id: "14.4", text: "O órgão conscientiza os agentes públicos nas melhores práticas de tratamento de dados?" },
+              { id: "15.4", text: "O órgão descreve os requisitos mínimos de segurança da informação nos contratos dos provedores de serviços?" },
+              { id: "15.7", text: "O órgão encerra de forma segura o contrato com o provedor de serviços?" },
+              { id: "16.8", text: "O órgão separa sistemas de produção e não produção?" },
+              { id: "22.2", text: "O órgão avalia se os agentes de tratamento aplicam medidas aptas a proteger os dados pessoais?" },
+              { id: "22.3", text: "O órgão encerra de forma segura o contrato, acordo ou instrumento congênere com os agentes de tratamento de dados pessoais?" },
+              { id: "25.7", text: "O órgão implementa medidas técnicas e administrativas aptas a proteger os dados pessoais?" },
+              { id: "4.11", text: "O órgão aplica o recurso de limpeza remota nos dispositivos portáteis de usuário final?" },
+              { id: "4.12", text: "O órgão separa os espaços de trabalho nos dispositivos móveis?" },
+            ]
+          },
+          {
+            risk: "Vazamento por dispositivos removíveis", measures: [
+              { id: "3.9", text: "O órgão criptografa dados críticos em mídia removível?" },
+            ]
+          },
+          {
+            risk: "Violação de direitos", measures: [
+              { id: "21.6", text: "O órgão possui processo para revisar, a pedido do titular, decisões tomadas com base em tratamento automatizado de dados pessoais?" },
+              { id: "25.1", text: "O órgão realiza tratamento de dados pessoais para propósitos legítimos, específicos, explícitos e informados ao titular?" },
+            ]
+          },
+          {
+            risk: "Violação de sigilo", measures: [
+              { id: "23.4", text: "O órgão, ao realizar estudos em saúde pública, mantém os dados pessoais em ambiente controlado e seguro?" },
+            ]
+          },
+        ]
+      },
+
+      "Resposta a Incidentes, Continuidade e Recuperação": {
+        icon: "🚨",
+        risks: [
+          {
+            risk: "Descoordenação da resposta a incidentes", measures: [
+              { id: "17.6", text: "O órgão define mecanismos de comunicação a ser realizado durante o tratamento de incidentes de segurança da informação?" },
+            ]
+          },
+          {
+            risk: "Falha na comunicação de incidentes", measures: [
+              { id: "17.2", text: "O órgão estabelece e mantém informações de contato para notificar incidentes de segurança da informação?" },
+            ]
+          },
+          {
+            risk: "Falha na resposta a incidentes envolvendo dados pessoais", measures: [
+              { id: "20.1", text: "O órgão implementa processo de gestão de incidentes com dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Falha na restauração em incidentes", measures: [
+              { id: "11.5", text: "O órgão testa a recuperação dos dados?" },
+            ]
+          },
+          {
+            risk: "Falhas operacionais", measures: [
+              { id: "24.1", text: "O órgão assegura a interoperabilidade dos dados pessoais necessários ao uso compartilhado?" },
+            ]
+          },
+          {
+            risk: "Incapacidade de resposta a incidentes", measures: [
+              { id: "0.8", text: "O órgão ou entidade instituiu a equipe de prevenção, tratamento e resposta a incidentes cibernéticos?" },
+            ]
+          },
+          {
+            risk: "Incidentes não reportados", measures: [
+              { id: "14.6", text: "O órgão conscientiza os agentes públicos sobre como reconhecer e notificar incidentes de segurança da informação?" },
+              { id: "17.3", text: "O órgão estabelece e mantém um processo institucional para notificar incidentes de segurança da informação?" },
+            ]
+          },
+          {
+            risk: "Indisponibilidade de serviços críticos", measures: [
+              { id: "0.14", text: "O órgão ou entidade estabeleceu e mantém processo de gestão de continuidade de negócios?" },
+            ]
+          },
+          {
+            risk: "Perda de dados", measures: [
+              { id: "11.1", text: "O órgão estabelece e mantém um processo de realização de cópias de segurança (backup)?" },
+              { id: "11.2", text: "O órgão executa backups automatizados?" },
+            ]
+          },
+          {
+            risk: "Perda de evidências", measures: [
+              { id: "8.3", text: "O órgão armazena adequadamente os logs de auditoria?" },
+            ]
+          },
+          {
+            risk: "Ransomware afetando backups", measures: [
+              { id: "11.4", text: "O órgão estabelece e mantém uma instância isolada de dados de recuperação?" },
+            ]
+          },
+          {
+            risk: "Recorrência de incidentes", measures: [
+              { id: "17.8", text: "O órgão realiza análises pós-incidente de segurança da informação?" },
+            ]
+          },
+          {
+            risk: "Resposta inadequada a incidentes", measures: [
+              { id: "17.4", text: "O órgão estabelece e mantém um processo de gestão de incidentes de segurança da informação?" },
+              { id: "17.9", text: "O órgão estabelece a diferença entre evento e incidente de segurança da informação?" },
+            ]
+          },
+        ]
+      },
+
+      "Segurança de Rede, Infraestrutura e Endpoints": {
+        icon: "🌐",
+        risks: [
+          {
+            risk: "Acesso indevido a dispositivos móveis", measures: [
+              { id: "4.10", text: "O órgão aplica o recurso de bloqueio automático nos dispositivos portáteis de usuário final?" },
+            ]
+          },
+          {
+            risk: "Acesso persistente não autorizado", measures: [
+              { id: "6.2", text: "O órgão estabelece um processo de revogação de acesso?" },
+            ]
+          },
+          {
+            risk: "Ataques de rede não bloqueados", measures: [
+              { id: "13.8", text: "O órgão implanta soluções para prevenção de intrusão de rede?" },
+            ]
+          },
+          {
+            risk: "Conexão de dispositivos não autorizados", measures: [
+              { id: "13.9", text: "O órgão implanta controle de acesso em nível de porta?" },
+            ]
+          },
+          {
+            risk: "Controle total do ambiente por atacante", measures: [
+              { id: "6.5", text: "O órgão exige autenticação multifator (MFA) para acesso administrativo?" },
+            ]
+          },
+          {
+            risk: "Dispositivos comprometidos conectando à rede", measures: [
+              { id: "13.5", text: "O órgão realiza o gerenciamento de controle de acesso para ativos remotos?" },
+            ]
+          },
+          {
+            risk: "Execução de ataques não bloqueada", measures: [
+              { id: "13.7", text: "O órgão implanta soluções para prevenção de intrusão baseada em host?" },
+            ]
+          },
+          {
+            risk: "Exposição direta de serviços", measures: [
+              { id: "4.4", text: "O órgão implementa e gerencia um firewall nos servidores?" },
+            ]
+          },
+          {
+            risk: "Movimentação lateral", measures: [
+              { id: "13.4", text: "O órgão realiza filtragem de tráfego entre os segmentos de rede?" },
+              { id: "18.5", text: "O órgão realiza testes de intrusão internos periódicos (pentest)?" },
+            ]
+          },
+          {
+            risk: "Propagação de ataques", measures: [
+              { id: "12.2", text: "O órgão estabelece e mantém uma arquitetura de rede segura?" },
+            ]
+          },
+          {
+            risk: "Redirecionamento malicioso (DNS spoofing)", measures: [
+              { id: "4.9", text: "O órgão configura servidores Sistema de Nomes de Domínio (DNS) confiáveis?" },
+            ]
+          },
+        ]
+      },
+
+      "Terceiros, Capacitação e Fator Humano": {
+        icon: "🤝",
+        risks: [
+          {
+            risk: "Ausência de diretrizes para terceiros", measures: [
+              { id: "15.2", text: "O órgão estabelece e mantém uma política de gestão de provedores de serviços?" },
+            ]
+          },
+          {
+            risk: "Baixa cultura de privacidade", measures: [
+              { id: "20.2", text: "O órgão implementa programa de conscientização em privacidade e proteção de dados pessoais?" },
+            ]
+          },
+          {
+            risk: "Comportamento inseguro dos usuários", measures: [
+              { id: "14.1", text: "O órgão implementa um programa de conscientização em segurança da informação?" },
+            ]
+          },
+          {
+            risk: "Desconhecimento dos mecanismos de autenticação", measures: [
+              { id: "6.6", text: "O órgão estabelece e mantém um inventário de sistemas de autenticação e autorização?" },
+            ]
+          },
+          {
+            risk: "Desconhecimento dos provedores críticos", measures: [
+              { id: "15.1", text: "O órgão estabelece e mantém o inventário de provedores de serviços?" },
+            ]
+          },
+          {
+            risk: "Equipe despreparada", measures: [
+              { id: "17.7", text: "O órgão conduz exercícios de tratamento de incidentes de segurança da informação regularmente?" },
+            ]
+          },
+          {
+            risk: "Falta de capacitação técnica", measures: [
+              { id: "14.9", text: "O órgão implementa ações para capacitação sobre segurança da informação?" },
+            ]
+          },
+          {
+            risk: "Risco de supply chain", measures: [
+              { id: "15.5", text: "O órgão avalia provedores de serviços?" },
+              { id: "16.4", text: "O órgão estabelece e gerencia um inventário de componentes de software de terceiros?" },
+            ]
+          },
+        ]
+      },
+
+      "Vulnerabilidades, Configuração e Hardening": {
+        icon: "🛡️",
+        risks: [
+          {
+            risk: "Ativos desatualizados", measures: [
+              { id: "14.7", text: "O órgão conscientiza os agentes públicos sobre como identificar e comunicar se os ativos institucionais estão sem atualizações de segurança?" },
+            ]
+          },
+          {
+            risk: "Configurações inseguras dos ativos e aplicações", measures: [
+              { id: "16.7", text: "O órgão usa modelos de configurações de proteção padrão para infraestrutura de aplicações?" },
+              { id: "4.1", text: "O órgão estabelece e mantém um processo de configuração segura?" },
+            ]
+          },
+          {
+            risk: "Desenvolvimento inseguro por erro humano", measures: [
+              { id: "16.9", text: "O órgão treina desenvolvedores em conceitos de segurança de aplicações e codificação segura?" },
+            ]
+          },
+          {
+            risk: "Dispositivos de rede mal configurados", measures: [
+              { id: "4.2", text: "O órgão estabelece e mantém um processo de configuração segura para a infraestrutura de rede?" },
+            ]
+          },
+          {
+            risk: "Exploração de dependências", measures: [
+              { id: "16.5", text: "O órgão usa componentes de software de terceiros atualizados e confiáveis?" },
+            ]
+          },
+          {
+            risk: "Exploração de falhas conhecidas", measures: [
+              { id: "12.1", text: "O órgão mantém atualizada a infraestrutura de rede?" },
+              { id: "7.3", text: "O órgão executa a gestão automatizada de atualizações do sistema operacional?" },
+            ]
+          },
+          {
+            risk: "Exploração de falhas em software", measures: [
+              { id: "7.4", text: "O órgão executa a gestão automatizada de atualizações de aplicações?" },
+            ]
+          },
+          {
+            risk: "Exploração de serviços não utilizados", measures: [
+              { id: "4.8", text: "O órgão desinstala ou desativa serviços desnecessários?" },
+            ]
+          },
+          {
+            risk: "Exploração de vulnerabilidades conhecidas", measures: [
+              { id: "16.2", text: "O órgão estabelece e mantém um processo para aceitar e tratar vulnerabilidades de software?" },
+              { id: "16.3", text: "O órgão executa análise de causa raiz em vulnerabilidades de segurança?" },
+              { id: "18.3", text: "O órgão corrige os resultados dos testes de intrusão (pentest)?" },
+              { id: "2.2", text: "O órgão mantém em seu ambiente computacional apenas soluções de software suportadas pelos seus fornecedores?" },
+              { id: "7.2", text: "O órgão estabelece e mantém um processo de remediação?" },
+              { id: "7.6", text: "O órgão realiza varreduras automatizadas de vulnerabilidades expostas externamente?" },
+              { id: "7.7", text: "O órgão corrige vulnerabilidades detectadas?" },
+              { id: "9.1", text: "O órgão permite o uso apenas de navegadores e clientes de e-mail totalmente suportados por seus fornecedores?" },
+            ]
+          },
+          {
+            risk: "Exploração de vulnerabilidades em aplicações", measures: [
+              { id: "13.10", text: "O órgão realiza a filtragem da camada de aplicação?" },
+            ]
+          },
+          {
+            risk: "Falhas críticas não identificadas", measures: [
+              { id: "16.13", text: "O órgão realiza teste de intrusão de aplicação (pentest)?" },
+              { id: "18.1", text: "O órgão elabora e mantém um programa de teste de intrusão (pentest)?" },
+            ]
+          },
+          {
+            risk: "Falhas críticas não tratadas", measures: [
+              { id: "16.6", text: "O órgão estabelece e mantém um sistema e processos para a classificação de severidade de vulnerabilidades de aplicações?" },
+            ]
+          },
+          {
+            risk: "Falhas estruturais exploráveis", measures: [
+              { id: "16.10", text: "O órgão aplica princípios de design seguro em arquiteturas de aplicações?" },
+            ]
+          },
+          {
+            risk: "Implementação insegura de funções críticas", measures: [
+              { id: "16.11", text: "O órgão reutiliza os módulos ou serviços validados quanto aos requisitos de segurança das aplicações?" },
+            ]
+          },
+          {
+            risk: "Introdução de riscos desde a concepção", measures: [
+              { id: "20.4", text: "O órgão possui um processo para promover a privacidade desde a fase de concepção do produto ou do serviço até a sua execução?" },
+            ]
+          },
+          {
+            risk: "Introdução de vulnerabilidades", measures: [
+              { id: "0.15", text: "O órgão ou entidade estabeleceu e mantém processo de gestão de mudanças?" },
+              { id: "16.1", text: "O órgão estabelece e mantém um processo de desenvolvimento seguro de aplicações?" },
+              { id: "16.12", text: "O órgão implementa verificações de segurança em nível de código?" },
+            ]
+          },
+          {
+            risk: "Vulnerabilidades não identificadas", measures: [
+              { id: "7.1", text: "O órgão estabelece e mantém um processo de gestão de vulnerabilidade?" },
+              { id: "7.5", text: "O órgão realiza varreduras automatizadas de vulnerabilidades internas?" },
+            ]
+          },
+        ]
+      },
+    };
+
+
+    // ═══════════════════════════════════════════════════════════
+    // DETALHAMENTO DAS MEDIDAS — extraído de refinamentodos_requisitos.odt
+    // ID -> texto completo de detalhamento (PPSI 2.0)
+    // ═══════════════════════════════════════════════════════════
+    const MEASURE_DETAILS = {
+      "0.1": "A alta administração deve estabelecer, manter, monitorar e aprimorar o sistema de gestão de riscos e controles internos com vistas à identificação, à avaliação, ao tratamento, ao monitoramento e à análise crítica dos riscos que possam impactar a implementação da estratégia e a consecução dos objetivos da organização no cumprimento da sua missão institucional (Decreto nº 9203/2017, art. 17), sem prejuízo das responsabilidades dos gestores dos processos organizacionais. Nesse contexto, os temas de privacidade e segurança da informação devem estar integrados ao sistema de gestão de riscos e aos controles internos. Ademais, conforme Acórdão 2387/2024 – Plenário TCU, a alta administração da organização deve liderar o processo de gestão de riscos decorrentes de ataques cibernéticos. Normas de Referência: Decreto nº 9.203/2017, art. 17.",
+      "0.2": "Designar formalmente agente público, e respectivo substituto, preferencialmente entre servidores públicos efetivos, empregados públicos ou militares, para exercer o cargo de Gestor de Tecnologia da Informação e Comunicação, conforme atribuições previstas no inciso IV do art. 4º da Portaria nº 778/2019 e em demais normas correlatas. Normas de Referência: Portaria SGD/ME nº 778/2019.",
+      "0.3": "Designar formalmente servidor, e respectivo substituto, para exercer o encargo de Gestor de Segurança da Informação conforme atribuições previstas no art. 19 da IN nº 1/2020, do Gabinete de Segurança Institucional da Presidência da República (GSI/PR) e demais normas correlatas. Normas de Referência: Decreto nº 12.572/2025, art. 10, III; IN GSI/PR nº 1/2020, art. 16, I, e Capítulo VI, Seção I; IN GSI/PR nº 3/2021, art. 46.",
+      "0.4": "Designar formalmente servidor, e respectivo substituto, para exercer o encargo de Encarregado pelo Tratamento de Dados Pessoais, nos termos do art. 41, § 2º, da Lei nº 13.709/2018, das Resoluções ANPD nºs 15/2024 e 18/2024 e demais normas correlatas. Normas de Referência: LGPD, arts. 23, III, e 41; Resolução CD/ANPD nº 18/2024, arts. 3º, 4º, 5º e 7º; IN SGD/ME nº 117, de 19 de novembro de 2020.",
+      "0.5": "Designar formalmente o responsável setorial pela gestão da integridade, nos termos do disposto no art. 5º, II do Decreto nº 11.529/2023. Normas de Referência: Decreto nº 11.529/2023, art. 5º, II.",
+      "0.6": "Instituir Comitê de Segurança da Informação ou estrutura equivalente para deliberar sobre os assuntos relativos à Política Nacional de Segurança da Informação e sobre normas de segurança da informação, contemplando demais atribuições do art. 20 da IN GSI/PR nº 1/2020. Normas de Referência: IN GSI/PR nº 1/2020, art. 16, II, e Capítulo VI, Seção II; Decreto nº 12.572/2025, art. 10, II.",
+      "0.7": "Instituir Comitê de Proteção de Dados Pessoais ou estrutura equivalente para deliberar sobre os assuntos relativos à Lei Geral de Proteção de Dados Pessoais, resoluções da ANPD e demais normas sobre o tema. Normas de Referência: LGPD, art. 50; Resolução CD/ANPD nº 18/2024, art. 10, V.",
+      "0.8": "Instituir e implementar a Equipe de Prevenção, Tratamento e Resposta a Incidentes Cibernéticos (ETIR), composta, preferencialmente, por servidores públicos civis ocupantes de cargo efetivo ou militares, com capacitação técnica compatível com as atividades da equipe. Para cada membro da Equipe deverá ser designado um substituto. Elaborar o documento de constituição da ETIR conforme NC nº 05/IN01/DSIC/GSI/PR, devidamente aprovado pela alta administração da organização, para regulamentar o funcionamento da equipe. Normas de Referência: IN GSI/PR nº 1/2020, art. 15, IV; NC nº 05/IN01/DSIC/GSI/PR.",
+      "0.9": "Instituir e implementar, preferencialmente em instância colegiada, o PGSI, documento que contém, no mínimo, o disposto na IN GSI/PR nº 3/2021, art. 45, na forma de ações estruturadas, políticas, normas e procedimentos para promover a segurança da informação na organização. Recomenda-se que o PGSI contemple papéis e responsabilidades dos agentes públicos envolvidos em sua execução, os prazos para realização das ações, além da programação para implementação dos controles e medidas de segurança da informação do PPSI, e que especifique indicadores de desempenho, como o iSeg, a serem medidos ao longo da execução do Programa. Revisar e atualizar o PGSI com base em informações obtidas a partir de monitoramento contínuo e avaliações periódicas de suas ações. Normas de Referência: IN GSI/PR nº 1/2020, art. 19, I, V, XI; IN GSI/PR nº 3/2021, art. 45.",
+      "0.10": "Instituir e implementar, preferencialmente em instância colegiada, o PGP, documento que contém, no mínimo, o disposto na Lei nº 13.709/2018, art. 50, § 2º, I, na forma de ações estruturadas, políticas, normas e procedimentos para o tratamento de dados pessoais pela organização. Recomenda-se que o PGP contemple papéis e responsabilidades dos agentes públicos envolvidos em sua execução, os prazos para realização das ações, além da programação para implementação dos controles e medidas de privacidade e proteção de dados pessoais do PPSI, e que especifique indicadores de desempenho, como o iPriv, a serem medidos ao longo da execução do Programa. Revisar e atualizar o PGP com base em informações obtidas a partir de monitoramento contínuo e avaliações periódicas de suas ações. Normas de Referência: Lei nº 13.709/2018, art. 50.",
+      "0.11": "Instituir e implementar uma Política de Segurança da Informação (POSIN), a partir da formalização e aprovação por parte da autoridade máxima da instituição, com o objetivo de estabelecer diretrizes, responsabilidades, competências e subsídios para a gestão da segurança da informação. Revisar e atualizar a POSIN periodicamente ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de Referência: IN GSI/PR nº 1/2020, Capítulo III, art. 19, III; Decreto nº 12.572/2025, art. 10, IV.",
+      "0.12": "Instituir e implementar uma Política de Proteção de Dados Pessoais, que estabeleça as diretrizes para o tratamento de dados pessoais, independentemente do meio em que são tratados, incluindo papéis e responsabilidades dos agentes públicos envolvidos nos tratamentos de dados pessoais. Instituir e divulgar demais políticas, normas e procedimentos sobre a temática. Revisar e atualizar os documentos periodicamente ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de Referência: Lei nº 13.709/2018, art. 50.",
+      "0.13": "Estabelecer e manter, em conformidade ao Capítulo III da IN GSI/PR nº 3/2021, um processo de gestão de riscos de segurança da informação alinhado com o modelo de gestão de riscos institucional, compatível com a missão e os objetivos estratégicos da organização considerando o disposto nos incisos do art. 11. Além disso, o processo deve ser composto por, no mínimo: plano de gestão de riscos de segurança da informação, conforme disposto no art. 13; relatório de identificação, análise e avaliação dos riscos de segurança da informação, conforme disposto no art. 14; e relatório de tratamento de riscos de segurança da informação, conforme disposto no art. 15. Considerar as atribuições dispostas nos arts. 16 e 17. Normas de Referência: IN GSI/PR nº 1/2020, art. 19, IV; IN GSI/PR nº 3/2021, Capítulo III; Decreto nº 12.572/2025, art. 3º, VI, e art. 4º, III.",
+      "0.14": "Estabelecer e manter, em conformidade ao Capítulo IV da IN GSI/PR nº 3/2021, um processo de gestão de continuidade de negócios em segurança da informação baseado nas estratégias de continuidade para as atividades críticas, na avaliação dos riscos levantados no processo de gestão de riscos e nas diretrizes institucionais sobre gestão de continuidade de negócio. Tal processo deve ser composto por um plano de continuidade de negócios em segurança da informação, o qual observará o disposto no relatório de identificação, análise e avaliação de riscos de segurança da informação e a prioridade de recuperação dos processos de negócio, revisado uma vez por ano ou após mudanças significativas nos itens que compõem o plano. Além disso, o conteúdo do plano deve incluir o disposto no art. 23, e ser testado regularmente. Considerar as atribuições dispostas nos arts. 25, 26 e 27. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo IV.",
+      "0.15": "Estabelecer e manter, em conformidade ao Capítulo V da IN GSI/PR nº 3/2021, um processo de gestão de mudanças nos aspectos de segurança da informação, respaldado nos relatórios do processo de gestão de riscos em segurança da informação e considerando a análise crítica das consequências de mudanças não previstas, atuando em ações para amenizar os efeitos adversos. O processo deve prever que a mudança seja classificada em emergencial, rotineira ou proativa, nos termos do art. 29. O processo deve ser constituído, minimamente, dos documentos de descrição da mudança e de avaliação e aprovação da mudança, contemplando o conteúdo dos arts. 32 e 34. Considerar as atribuições dispostas no parágrafo único do art. 31 e nos arts. 35 e 36. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo V.",
+      "0.16": "Estabelecer e manter, em conformidade ao Capítulo VI da IN GSI/PR nº 3/2021, um processo de avaliação de conformidade nos aspectos de segurança da informação. O processo deve ser constituído, minimamente, do plano de verificação de conformidade e do relatório de avaliação de conformidade, contemplando o conteúdo do art. 39 e art. 40. Considerar as atribuições dispostas nos arts. 41, 42 e 43. Normas de Referência: IN GSI/PR nº 1/2020, art. 19, VIII; IN GSI/PR nº 3/2021, Capítulo VI; Decreto nº 12.572/2025, art. 10, VI.",
+      "0.17": "Estabelecer e manter um processo documentado de gestão de riscos relacionados às operações de tratamento de dados pessoais, independentemente do meio em que ocorrem, que considere também a etapa de aplicação de medidas de segurança, técnicas e administrativas, testadas e avaliadas, aptas a proteger os dados pessoais. Periodicamente, realizar revisão ou atualização deste processo, assim como em casos específicos quando ocorrerem mudanças que impactem de forma significativa esta medida. Este processo pode ser incorporado a outros processos institucionais de gestão de riscos da organização.",
+      "1.1": "Estabelecer e manter um inventário preciso e detalhado de todos os ativos institucionais que realizam tratamento de dados, incluindo: dispositivos de usuário final (incluindo portáteis e móveis), de rede, de Internet das Coisas, não computacionais e servidores, em adição ao disposto no Capítulo II da IN GSI/PR nº 3/2021. O inventário deve conter, no mínimo: endereço de rede (se estático), endereço de hardware, nome do ativo, proprietário, unidade organizacional, indicação se o ativo foi aprovado para se conectar à rede. Este inventário deve incluir ativos conectados à infraestrutura fisicamente, virtualmente ou remotamente e aqueles dentro de ambientes de nuvem. Também deve contemplar ativos regularmente conectados à infraestrutura de rede da organização, mesmo que não estejam sob seu controle. Revisar e atualizar o inventário semestralmente ou com mais frequência. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "1.2": "Estabelecer e manter um processo para lidar com ativos institucionais não autorizados, optando por removê-los da rede, negar sua conexão remota ou colocá-los em quarentena. Normas de Referência: não identificadas.",
+      "1.3": "Identificar os ativos institucionais conectados à rede da organização por meio de uma ferramenta de descoberta ativa, configurada para execução diária ou em intervalos menores. Normas de Referência: não identificadas.",
+      "1.4": "Utilizar os registros (logs) de todos os servidores DHCP ou ferramentas de gerenciamento de endereços IP para atualizar o inventário de ativos institucionais. Normas de Referência: não identificadas.",
+      "1.5": "Utilizar uma ferramenta de descoberta passiva para identificar ativos institucionais conectados à rede da organização. Revisar as varreduras e atualizar o inventário de ativos institucionais pelo menos semanalmente ou em intervalos menores, se necessário. Normas de Referência: não identificadas.",
+      "2.1": "Estabelecer e manter um inventário detalhado de todas as soluções de software licenciadas instaladas em ativos institucionais, em adição ao disposto no Capítulo II da IN GSI/PR nº 3/2021. Revisar e atualizar o inventário semestralmente ou com mais frequência. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "2.2": "Assegurar que apenas soluções de software atualmente suportadas por seus fornecedores sejam categorizadas como autorizadas no inventário de soluções de software da organização. Se uma solução de software não for suportada, mas ainda assim necessária para o cumprimento da missão da organização, deve-se documentar uma exceção detalhando os controles compensatórios e a aceitação do risco residual. Para qualquer solução de software sem suporte que não possua documentação de exceção, a mesma deve ser categorizada como não autorizada. Revisar a lista de soluções de software suportadas mensalmente, ou em intervalos menores. Normas de Referência: não identificadas.",
+      "2.3": "Assegurar que as soluções de software não autorizadas sejam removidas dos ativos institucionais ou recebam uma exceção documentada. Revisar semestralmente ou em intervalos menores. Normas de Referência: não identificadas.",
+      "2.4": "Utilizar ferramentas de inventário de soluções de software, quando possível, para automatizar a descoberta e documentação de soluções de software instaladas em toda a organização. Normas de Referência: não identificadas.",
+      "2.5": "Elaborar lista de soluções de software autorizadas e implementar controles técnicos em todos os ativos para garantir que apenas estas soluções sejam executadas. Reavaliar a lista semestralmente ou em intervalos menores. Normas de Referência: não identificadas.",
+      "2.6": "Elaborar lista de bibliotecas de software autorizadas e implementar controles técnicos para assegurar que apenas bibliotecas autorizadas (tais como *.dll, *.ocx, *.so, etc.) tenham permissão para serem carregadas nos processos em execução. Impedir que bibliotecas não autorizadas sejam carregadas nos processos. Reavaliar a lista semestralmente ou em intervalos menores. Normas de Referência: não identificadas.",
+      "2.7": "Elaborar lista de scripts autorizados e implementar controles técnicos, como assinaturas digitais e controle de versão, para assegurar que apenas scripts autorizados e assinados digitalmente (a exemplo de *.ps1, *.py e macros) tenham permissão para serem executados. Bloquear a execução de scripts não autorizados. Reavaliar a lista semestralmente ou em intervalos menores. Normas de Referência: não identificadas.",
+      "3.1": "Estabelecer e manter um processo de gestão de dados. No processo, tratar a criticidade, o proprietário, o manuseio, os limites de retenção e os requisitos para descarte dos dados com base em padrões de criticidade e retenção da organização. Revisar e atualizar a documentação anualmente ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II; IN GSI/PR nº 5/2021, Capítulo IV, Seção VII; NC nº 20/IN01/DSIC/GSIPR, item 7; IN GSI/PR nº 8/2025, arts. 4º, 5º e 6º.",
+      "3.2": "Estabelecer e manter um inventário de dados - priorizando os dados críticos, sigilosos e com restrição de acesso - com base no processo de gestão de dados. Realizar a revisão e atualização periódica do inventário. O inventário de dados pessoais é objeto do Controle 19. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "3.3": "Configurar listas de controle de acesso a dados com base no princípio da necessidade de saber do usuário. Aplicar listas de controle de acesso, também conhecidas como permissões de acesso, a sistemas de arquivos locais e remotos, bancos de dados e aplicações. Normas de Referência: IN GSI/PR nº 8/2025, art. 3º, VIII e XIII.",
+      "3.4": "Reter os dados de acordo com o processo de gestão de dados e a legislação vigente. A retenção deve incluir prazos mínimos e máximos. Normas de Referência: NC nº 20/IN01/DSIC/GSIPR, itens 6.2 e 6.4.",
+      "3.5": "Descartar com segurança os dados, sejam eles armazenados em meio físico ou lógico, conforme o processo de gestão de dados e a legislação vigente. Certificar-se de que o método de descarte adotado seja compatível com a criticidade dos dados. Normas de Referência: NC nº 20/IN01/DSIC/GSIPR, item 6.4.",
+      "3.6": "Criptografar os dados críticos para a organização em dispositivos de usuário final, considerando a NC nº 09/IN01/DSIC/GSIPR. Normas de Referência: IN GSI/PR nº 3/2013; NC nº 09/IN01/DSIC/GSIPR.",
+      "3.7": "Estabelecer e manter um esquema geral de classificação de dados baseado na criticidade para a organização, com critérios para classificação específicos. Revisar e atualizar o esquema de classificação anualmente ou quando ocorrerem mudanças significativas que possam impactar esta medida. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "3.8": "Documentar o fluxo de dados com base no processo de gestão de dados, garantindo rastreabilidade e conformidade com normas e diretrizes. A documentação do fluxo de dados deve ser revisada e atualizada anualmente ou sempre que houver mudanças significativas que possam impactá-lo. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "3.9": "Criptografar os dados críticos para a organização em mídias removíveis, considerando a NC nº 09/IN01/DSIC/GSIPR. Normas de Referência: IN GSI/PR nº 3/2013; NC nº 09/IN01/DSIC/GSIPR.",
+      "3.10": "Criptografar os dados críticos para a organização que estão em trânsito, considerando a NC nº 09/IN01/DSIC/GSIPR. Normas de Referência: NC nº 09/IN01/DSIC/GSIPR; IN GSI/PR nº 5/2021, Capítulo IV, Seção IV; IN GSI/PR nº 8/2025, art. 3º, IV e V.",
+      "3.11": "Criptografar os dados críticos para a organização e que estão em repouso nos servidores, sistemas e banco de dados que os armazenam, considerando a NC nº 09/IN01/DSIC/GSIPR. Normas de Referência: NC nº 09/IN01/DSIC/GSIPR; IN GSI/PR nº 5/2021, Capítulo IV, Seção IV; IN GSI/PR nº 8/2025, art. 3º, IV e V.",
+      "3.12": "Segmentar o processamento e armazenamento de dados com base na sua criticidade. Não processar dados críticos para a organização em ativos institucionais destinados a dados de menor criticidade. Normas de Referência: IN GSI/PR nº 5/2021, Capítulo IV, Seção V; IN GSI/PR nº 8/2025, art. 3º, I, II e III.",
+      "3.13": "Implementar uma ferramenta automatizada, como uma solução de prevenção de perda de dados (Data Loss Prevention - DLP) baseada em host, para identificar todos os dados críticos processados, transmitidos ou armazenados por meio dos ativos institucionais. Normas de Referência: não identificadas.",
+      "3.14": "Registrar o acesso aos dados críticos para a organização, incluindo modificação e descarte. Normas de Referência: NC nº 21/IN01/DSIC/GSIPR, item 6.2, b; IN GSI/PR nº 5/2021, Capítulo IV, Seção III; IN GSI/PR nº 8/2025, art. 3º, IX.",
+      "4.1": "Estabelecer e manter um processo de configuração segura para os ativos institucionais (dispositivos de usuário final, incluindo portáteis e móveis, dispositivos da IoT e não computacionais, servidores) e soluções de software. Revisar e atualizar a documentação anualmente ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de Referência: não identificadas.",
+      "4.2": "Estabelecer e manter um processo de configuração segura para dispositivos de rede. Revisar e atualizar a documentação anualmente ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de Referência: não identificadas.",
+      "4.3": "Configurar o bloqueio automático de sessão, quando aplicável, nos ativos institucionais após um período definido de inatividade. Normas de Referência: não identificadas.",
+      "4.4": "Implementar e gerenciar um firewall nos servidores, quando suportado. Normas de Referência: não identificadas.",
+      "4.5": "Implementar e gerenciar um firewall baseado em host ou uma ferramenta de filtragem de porta nos dispositivos de usuário final, com uma regra de negação padrão que bloqueia todo o tráfego, exceto os serviços e portas que são explicitamente permitidos. Normas de Referência: não identificadas.",
+      "4.6": "Gerenciar com segurança os ativos institucionais e soluções de software. Exemplos de implementações incluem gestão de configuração por meio de infraestrutura como código com controle de versão (version controlled infrastructure as code) e acesso a interfaces administrativas por meio de protocolos de rede seguros. Normas de Referência: não identificadas.",
+      "4.7": "Gerenciar contas padrão nos ativos institucionais e soluções de software, como root, administrador e outras contas de fornecedores pré-configuradas. Normas de Referência: não identificadas.",
+      "4.8": "Desinstalar ou desativar serviços desnecessários nos ativos institucionais e soluções de software, como serviço de compartilhamento de arquivo não utilizado, módulo de aplicação web ou função de serviço. Normas de Referência: não identificadas.",
+      "4.9": "Configurar servidores DNS confiáveis nos ativos institucionais. Exemplos de implementações incluem configurar a infraestrutura de rede para usar servidores DNS controlados pela organização ou servidores DNS externos confiáveis. Normas de Referência: não identificadas.",
+      "4.10": "Aplicar o bloqueio automático dos dispositivos portáteis de usuário final após um número de tentativas de autenticação com falha, com base no limite definido pela organização. Normas de Referência: não identificadas.",
+      "4.11": "Assegurar que os dispositivos portáteis de usuário final de propriedade da organização estejam preparados para limpeza remota e executá-la conforme previsto na política de gestão de ativos institucionais, incluindo casos como dispositivos perdidos ou roubados, ou quando um indivíduo não trabalha mais na organização. Normas de Referência: não identificadas.",
+      "4.12": "Certificar de que a separação de espaços de trabalho seja usada nos dispositivos móveis de usuário final, ou seja, separar aplicações e dados institucionais de aplicações e dados de uso pessoal nos dispositivos, quando suportado. Normas de Referência: não identificadas.",
+      "5.1": "Estabelecer e manter um inventário de todas as contas gerenciadas na organização. O inventário deve incluir contas de usuário e de administrador, e conter minimamente o nome do agente público, o nome do usuário, datas de início e término, além do departamento. Validar se todas as contas ativas estão autorizadas, trimestralmente ou em intervalos menores. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "5.2": "Configurar os ativos institucionais para evitar ou desestimular a reutilização de senhas, promovendo a adoção de senhas únicas para ativos diferentes. Normas de Referência: não identificadas.",
+      "5.3": "Desabilitar ou excluir quaisquer contas inativas, conforme política de gestão de contas, após um período de inatividade estabelecido pela organização. Normas de Referência: não identificadas.",
+      "5.4": "Limitar os privilégios de administrador às contas de administrador dedicadas. Realizar atividades gerais de computação, como navegação na Internet, e-mail e uso do pacote de produtividade, a partir da conta primária não privilegiada do usuário. Normas de Referência: não identificadas.",
+      "5.5": "Estabelecer e manter um inventário de contas de serviço. O inventário, no mínimo, deve conter a unidade proprietária, data de revisão e propósito. Realizar revisões de contas de serviço para validar se todas as contas ativas estão autorizadas, em uma programação recorrente, no mínimo trimestralmente ou em intervalos menores. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "5.6": "Centralizar a gestão de contas por meio de serviço de diretório ou de identidade. Normas de Referência: IN GSI/PR nº 5/2021, art. 13, I, II e III; IN GSI/PR nº 8/2025, art. 3º, XI.",
+      "6.1": "Estabelecer e manter um processo, de preferência automatizado, para conceder acesso físico e lógico aos ativos institucionais e soluções de software mediante novo ingresso de agente público, concessão de direitos ou mudança de função de um usuário. Normas de Referência: não identificadas.",
+      "6.2": "Estabelecer e manter um processo, de preferência automatizado, para revogar o acesso aos ativos institucionais e soluções de software, por meio da desativação de contas imediatamente após seu encerramento, revogação de direitos ou mudança de função de um usuário. Desativar contas, em vez de excluí-las, pode ser necessário para preservar as trilhas de auditoria. Normas de Referência: não identificadas.",
+      "6.3": "Exigir que todas as soluções de software da organização ou de terceiros expostas externamente apliquem autenticação multifator, onde suportado. Aplicar autenticação multifator por meio de um serviço de diretório ou provedor de Single Sign-On (SSO) é uma forma de implementação desta medida. Normas de Referência: IN GSI/PR nº 5/2021, art. 13, I, II e III; IN GSI/PR nº 8/2025, art. 3º, VII.",
+      "6.4": "Exigir autenticação multifator para acesso remoto à rede. Normas de Referência: não identificadas.",
+      "6.5": "Exigir autenticação multifator para todas as contas de acesso administrativo, em todos os ativos institucionais e soluções de software, sejam gerenciados no site local ou por meio de um provedor terceirizado. Normas de Referência: não identificadas.",
+      "6.6": "Estabelecer e manter um inventário dos sistemas de autenticação e autorização da organização, incluindo aqueles hospedados no site local ou em um provedor de serviços remoto. Revisar e atualizar o inventário semestralmente ou em intervalos menores. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "6.7": "Centralizar o controle de acesso para todos os ativos institucionais e soluções de software por meio de um serviço de diretório ou provedor de Single Sign-On (SSO), quando suportado. Normas de Referência: IN GSI/PR nº 5/2021, art. 13, III; IN GSI/PR nº 8/2025, art. 3º, XI.",
+      "6.8": "Definir e manter o controle de acesso baseado em funções, determinando e documentando os direitos de acesso necessários para cada função dentro da organização para cumprir com sucesso as funções atribuídas. Revisar os controles de acesso para validar se todos os privilégios estão autorizados, em uma programação recorrente, uma vez por ano ou em intervalos menores. Normas de Referência: IN GSI/PR nº 8/2025, art. 3º, XII.",
+      "7.1": "Estabelecer e manter um processo de gestão de vulnerabilidade para ativos institucionais e soluções de software. Revisar e atualizar a documentação anualmente ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo III.",
+      "7.2": "Estabelecer e manter um processo de remediação, fundamentado na estratégia de remediação institucional baseada em risco, com revisões semestrais ou em intervalos menores. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo III.",
+      "7.3": "Realizar atualizações do sistema operacional por meio da gestão automatizada de atualizações, mensalmente ou com mais frequência. Normas de Referência: não identificadas.",
+      "7.4": "Realizar atualizações de aplicações por meio da gestão automatizada de atualizações, mensalmente ou em intervalos menores. Normas de Referência: não identificadas.",
+      "7.5": "Realizar varreduras automatizadas de vulnerabilidade em ativos institucionais e soluções de software internos, trimestralmente ou em intervalos menores. Realizar varreduras autenticadas e não autenticadas. Normas de Referência: não identificadas.",
+      "7.6": "Executar varreduras de vulnerabilidade automatizadas nos ativos institucionais e soluções de software expostos externamente. Executar varreduras mensalmente ou em intervalos menores. Normas de Referência: não identificadas.",
+      "7.7": "Corrigir as vulnerabilidades detectadas por meio de processos e ferramentas, mensalmente ou em intervalos menores, com base no processo de remediação. Normas de Referência: IN GSI/PR nº 3/2021, Capítulo III.",
+      "8.1": "Estabelecer e manter um processo de gestão de logs de auditoria que defina os requisitos de registro de logs da organização, considerando a NC nº 21/IN01/DSIC/GSIPR. No mínimo, abordar a coleta, revisão e armazenamento dos logs de auditoria para os ativos institucionais e soluções de software, considerando o tempo de retenção e os dados estritamente necessários à segurança da informação. Revisar e atualizar a documentação anualmente ou sempre que ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de Referência: NC nº 21/IN01/DSIC/GSIPR; IN GSI/PR nº 5/2021, art. 13, IV, V e VI.",
+      "8.2": "Coletar logs de auditoria. Certificar-se de que o log, de acordo com o processo de gestão de log de auditoria da organização, tenha sido habilitado em todos os ativos institucionais e soluções de software em que esta funcionalidade estiver disponível. Normas de Referência: NC nº 21/IN01/DSIC/GSIPR, item 6.2; IN GSI/PR nº 5/2021, art. 13, IV, V e VI.",
+      "8.3": "Assegurar que os logs possuam armazenamento seguro em conformidade com normas internas e regulatórias, preservando sua integridade e proteção contra alterações. Além disso, garantir acessibilidade e monitoramento contínuo, assegurando a disponibilidade dos logs para auditorias e investigações, bem como a aderência aos normativos aplicáveis, em atendimento aos requisitos de gerenciamento de registros de auditoria da organização. Normas de Referência: IN GSI/PR nº 5/2021, art. 13, IV, V e VI.",
+      "8.4": "Padronizar a sincronização de tempo. Configurar todos os ativos institucionais e soluções de software com pelo menos duas fontes de sincronização de tempo, quando suportado. Normas de Referência: NC nº 21/IN01/DSIC/GSIPR, item 6.1.",
+      "8.5": "Configurar o log de auditoria detalhado para os ativos institucionais e soluções de software que contenham dados críticos para a organização. Incluir a origem do evento, data, nome de usuário, carimbo de data e hora, endereços de origem, endereços de destino e outros elementos úteis que possam ajudar em uma investigação forense. Normas de Referência: NC nº 21/IN01/DSIC/GSIPR, item 6.3.",
+      "8.6": "Habilitar o registro de log de consulta do servidor DNS inclusive para detectar pesquisas de nomes de host para domínios maliciosos conhecidos, quando suportado. Normas de Referência: não identificadas.",
+      "8.7": "Coletar logs de auditoria de requisição de URL em ativos institucionais, quando suportado. Normas de Referência: não identificadas.",
+      "8.8": "Habilitar o log de auditoria sobre ferramentas de linha de comando, tais como Microsoft Powershell, Bash e demais terminais administrativos remotos. Normas de Referência: não identificadas.",
+      "8.9": "Centralizar, sempre que possível, a coleta e retenção de logs de auditoria de acordo com um processo de gerenciamento de logs de auditoria. Normas de Referência: NC nº 21/IN01/DSIC/GSIPR, item 6.8.",
+      "8.10": "Garantir a retenção dos logs de auditoria pelo período estabelecido pela organização. Normas de Referência: NC nº 21/IN01/DSIC/GSIPR, item 6.7; IN GSI/PR nº 5/2021, art. 13, IV, V e VI.",
+      "8.11": "Realizar análises de logs de auditoria para detectar anomalias ou eventos anormais que possam indicar uma ameaça potencial. Realizar revisões semanalmente ou em intervalos menores. Normas de Referência: não identificadas.",
+      "8.12": "Coletar logs de provedores de serviços, quando suportado. Exemplos de implementações incluem coleta de eventos de autenticação e autorização, eventos de criação e de descarte de dados e eventos de gestão de usuários. Normas de Referência: IN GSI/PR nº 5/2021, art. 13, IV, V e VI.",
+      "9.1": "Assegurar que apenas navegadores e clientes de e-mail totalmente suportados por seus fornecedores tenham permissão para executar na organização, usando apenas a versão mais recente. Normas de Referência: não identificadas.",
+      "9.2": "Usar serviços de filtragem de DNS em todos os dispositivos do usuário final, incluindo ativos remotos e locais, para bloquear o acesso a domínios maliciosos conhecidos. Normas de Referência: não identificadas.",
+      "9.3": "Aplicar e atualizar filtros de URL baseados em rede para limitar os ativos institucionais de se conectarem a sites potencialmente maliciosos ou não aprovados. Normas de Referência: não identificadas.",
+      "9.4": "Restringir, por meio de desinstalação ou desativação, quaisquer plug-ins, extensões e aplicativos complementares não autorizados ou desnecessários de navegadores ou de clientes de e-mail. Normas de Referência: não identificadas.",
+      "9.5": "Implementar o protocolo DMARC por meio da implementação dos padrões Sender Policy Framework (SPF) e DomainKeys Identified Mail (DKIM), objetivando diminuir a chance de e-mails forjados. Normas de Referência: não identificadas.",
+      "9.6": "Bloquear tipos de arquivo desnecessários que tentem entrar no gateway de e-mail da organização. Normas de Referência: não identificadas.",
+      "9.7": "Implementar e manter proteção antimalware de servidores de e-mail, como varredura de anexos ou sandbox. Normas de Referência: não identificadas.",
+      "10.1": "Instalar e manter um software antimalware em todos os ativos institucionais que possibilitem esta instalação. Normas de referência: não identificadas.",
+      "10.2": "Configurar atualizações automáticas para as assinaturas antimalware em todos os ativos institucionais que possibilitem esta configuração. Normas de referência: não identificadas.",
+      "10.3": "Configurar os dispositivos para a não execução e reprodução automática de mídias removíveis. Normas de referência: não identificadas.",
+      "10.4": "Configurar o software antimalware para verificar automaticamente mídias removíveis. Normas de referência: não identificadas.",
+      "10.5": "Implantar recursos de proteção antiexploração nos ativos institucionais, sempre que possível. Normas de referência: não identificadas.",
+      "10.6": "Utilizar software antimalware gerenciado de forma centralizada. Normas de referência: não identificadas.",
+      "10.7": "Utilizar software antimalware baseado em comportamento. Normas de referência: não identificadas.",
+      "11.1": "Estabelecer e manter um processo de realização de cópias de segurança (backups), incluindo as atividades de recuperação de dados. Tal processo deve descrever em seu escopo critérios de priorização para recuperação, bem como medidas para segurança dos dados. Periodicamente, deve ser realizada uma revisão ou atualização deste processo, assim como em casos específicos quando ocorrerem mudanças significativas que venham a impactar esta medida. Normas de referência: IN GSI/PR nº 8/2025, art. 3º, VI.",
+      "11.2": "Estabelecer e manter procedimentos para que todos os dados dos ativos institucionais tenham cópias de segurança (backups) realizadas automaticamente e de forma regular, de acordo com a criticidade dos dados. Normas de referência: não identificadas.",
+      "11.3": "Estabelecer e manter procedimentos para proteger os dados de recuperação com controles equivalentes aos dos dados originais. Considerar o uso de criptografia ou separação de dados, conforme os requisitos. Normas de referência: NC nº 20/IN01/DSIC/GSIPR, 6.2.4; IN GSI/PR nº 3/2013; NC nº 09/IN01/DSIC/GSIPR; IN GSI/PR nº 8/2025, art. 3º, VI.",
+      "11.4": "Criar e manter pelo menos uma instância isolada dos dados de recuperação. Alguns exemplos deste tipo de implementação são o controle de versão de destinos de backup por meio de sistemas ou serviços off-line (backup off-line, não acessível por meio de uma conexão de rede), em nuvem, ou em datacenter separado do site local. Normas de referência: não identificadas.",
+      "11.5": "Realizar o teste de integridade do backup regularmente, executando um processo de restauração de dados para assegurar que o backup esteja funcionando corretamente conforme política de backup. Normas de referência: NC nº 20/IN01/DSIC/GSIPR, 6.3.9; IN GSI/PR nº 8/2025, art. 3º, VI.",
+      "12.1": "Estabelecer e manter procedimentos para assegurar que a infraestrutura de rede da organização esteja sempre atualizada. Revisar as versões de software mensalmente, ou com maior frequência, para verificar se ainda estão sendo suportados pelos seus fornecedores. Normas de referência: não identificadas.",
+      "12.2": "Projetar e manter uma arquitetura de rede segura abordando, no mínimo, segmentação, privilégio mínimo e disponibilidade. Exemplos de implementações incluem documentação, políticas e componentes de projeto. Normas de referência: IN GSI/PR nº 5/2021, art. 15; IN GSI/PR nº 8/2025, art. 3º, I, II, III.",
+      "12.3": "Gerenciar com segurança a infraestrutura de rede da organização. Exemplos de implementações incluem a Infraestrutura como Código (Infrastructure as Code, IaC) com controle de versão e o uso de protocolos de rede seguros. Normas de referência: não identificadas.",
+      "12.4": "Elaborar e manter diagramas e demais documentações da arquitetura de rede da organização. Revisar e atualizar as documentações anualmente ou quando ocorrerem mudanças significativas que possam impactar esta medida. Normas de referência: não identificadas.",
+      "12.5": "Centralizar a autenticação, autorização e auditoria da rede. Normas de referência: não identificadas.",
+      "12.6": "Adotar protocolos de comunicação e gerenciamento de rede seguros. Normas de referência: não identificadas.",
+      "12.7": "Exigir que os usuários que acessam a rede de forma remota utilizem uma VPN gerenciada pela organização e realizem autenticação via serviços AAA antes de qualquer acesso. Normas de referência: não identificadas.",
+      "12.8": "Estabelecer e manter recursos de computação dedicados, física ou logicamente separados, para todas as tarefas administrativas de TI ou tarefas que exijam acesso administrativo. Os recursos de computação devem ser segmentados da rede primária da organização e não devem ter acesso à internet. Normas de referência: não identificadas.",
+      "13.1": "Centralizar os alertas de eventos de segurança dos ativos institucionais e soluções de software da organização para correlação e análise de registros. As boas práticas demandam o uso de um Security Information and Event Management (SIEM), que inclui alertas de correlação de eventos definidos pelo fornecedor. Uma plataforma de análise de log configurada com aletas de correlação relevantes para a segurança também atende esta medida. Normas de referência: NC nº 21/IN01/DSIC/GSIPR, 6.8; IN GSI/PR nº 8/2025, art. 3º, X.",
+      "13.2": "Implantar soluções para detecção de intrusão baseada em host nos ativos institucionais, quando apropriado ou suportado. Normas de referência: não identificadas.",
+      "13.3": "Implantar soluções para detecção de intrusão de rede nos ativos institucionais, quando apropriado. Exemplos de implementações incluem o uso de um Network Intrusion Detection System (NIDS) ou serviço de provedor de nuvem equivalente. Normas de referência: não identificadas.",
+      "13.4": "Realizar a filtragem de tráfego entre os segmentos de rede, quando apropriado. Normas de referência: não identificadas.",
+      "13.5": "Gerenciar o controle de acesso em ativos institucionais que se conectam remotamente aos recursos da organização. Determinar a quantidade de acesso aos recursos organizacionais com base em: software antimalware instalados e atualizados, conformidade com o processo de configuração segura dos ativos institucionais e garantia de que os sistemas operacionais e demais aplicações estejam atualizados. Normas de referência: não identificadas.",
+      "13.6": "Realizar a coleta dos logs de fluxo de tráfego de rede com o objetivo de checar e alertar sobre dispositivos de rede que estejam com comportamento suspeito relacionado às suas necessidades de acesso para execução de suas funcionalidades. Normas de referência: não identificadas.",
+      "13.7": "Implantar uma solução de prevenção de intrusão baseada em host nos ativos institucionais, quando suportado. Exemplos de implementações incluem o uso de um cliente Endpoint Detection and Response (EDR) ou de um agente Instrusion Prevention System (IPS) baseado em host. Normas de referência: não identificadas.",
+      "13.8": "Implantar uma solução para prevenção de intrusão baseada em rede, quando suportado. Exemplos de implementações incluem o uso de um sistema de prevenção de intrusão de rede (Network Intrusion Prevention System, NIPS) ou serviço de provedor de nuvem equivalente. Normas de referência: não identificadas.",
+      "13.9": "Implantar o controle de acesso em nível de porta. Esta medida utiliza o protocolo 802.1x ou soluções semelhantes como certificados, e pode incorporar a autenticação de usuário ou dispositivo. Normas de referência: não identificadas.",
+      "13.10": "Realizar a filtragem da camada de aplicação. Exemplos de implementações incluem um proxy de filtragem, firewall da camada de aplicação ou gateway. Normas de referência: não identificadas.",
+      "13.11": "Ajustar periodicamente os limites dos alertas de eventos de segurança para assegurar a eficácia na detecção de ameaças. Normas de referência: não identificadas.",
+      "14.1": "Estabelecer e manter um programa de conscientização em segurança da informação com o objetivo de promover tal cultura na organização, conscientizar seus agentes públicos sobre responsabilidades e procedimentos relacionados ao tema e sobre como interagir com ativos institucionais de forma segura. Prever procedimentos de conscientização no ingresso dos agentes públicos e de forma continuada, de acordo com a NC nº 18/IN01/DSIC/GSIPR. Revisar e atualizar o conteúdo do programa anualmente ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de referência: NC nº 18/IN01/DSIC/GSIPR; Decreto nº 12.572/2025, art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "14.2": "Garantir que o programa de conscientização contemple conteúdo sobre como identificar diferentes formas de ataques de engenharia social, como phishing, comprometimento de e-mail institucional, golpes de telefone e chamadas realizadas por impostores. Normas de referência: NC nº 18/IN01/DSIC/GSIPR; Decreto nº 12.572/2025, art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "14.3": "Garantir que o programa de conscientização contemple conteúdo sobre as melhores práticas de autenticação. Exemplos de tópicos incluem autenticação multifator (Multi-Factor Authentication, MFA), composição de senhas e gerenciamento de credenciais. Normas de referência: NC nº 18/IN01/DSIC/GSIPR; Decreto nº 12.572/2025, art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "14.4": "Garantir que o programa de conscientização contemple conteúdo sobre como identificar e armazenar, transferir, arquivar e destruir adequadamente informações. Isto também inclui conscientizar sobre práticas recomendadas de mesa e tela limpas (não deixar senhas expostas nas mesas de trabalho e bloquear a tela da estação de trabalho ao se ausentar), apagar quadros físicos e virtuais após reuniões e tratar dados e demais ativos institucionais com segurança. Normas de referência: NC nº 18/IN01/DSIC/GSIPR; NC nº 20/IN01/DSIC/GSIPR, item 4.7; Decreto nº 12.572/2025, art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "14.5": "Garantir que o programa de conscientização contemple conteúdo sobre ocorrências não intencionais de exposição de dados, como entrega incorreta de dados pessoais, sigilosos ou com alguma restrição de acesso, perda de dispositivos móveis ou publicação de dados não intencional. Normas de referência: NC nº 18/IN01/DSIC/GSIPR; Decreto nº 12.572/2025, art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "14.6": "Garantir que o programa de conscientização contemple conteúdo que oriente os agentes públicos para serem capazes de identificar os indicadores mais comuns de um incidente e serem capazes de notificar tal incidente. Normas de referência: NC nº 18/IN01/DSIC/GSIPR; Decreto nº 12.572/2025, art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "14.7": "Garantir que o programa de conscientização contemple conteúdo sobre verificar e notificar desatualizações ou quaisquer falhas em ferramentas e processos automatizados. Normas de referência: NC nº 18/IN01/DSIC/GSIPR; Decreto nº 12.572/2025, art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "14.8": "Garantir que o programa de conscientização contemple conteúdo sobre os riscos de se conectar e transmitir dados em redes inseguras para atividades da organização. Se a organização tiver agentes públicos em teletrabalho, é relevante incluir no programa de conscientização recomendações sobre configuração segura da infraestrutura de rede doméstica do agente público. Normas de referência: NC nº 18/IN01/DSIC/GSIPR; Decreto nº 12.572/2025, art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "14.9": "Incluir nos instrumentos de capacitação de pessoas da organização, a exemplo do Plano de Desenvolvimento de Pessoas, as necessidades de treinamento em segurança da informação para agentes públicos que atuem em funções específicas, de modo a atender suas competências específicas, e promover a execução de tais instrumentos. Exemplos de necessidades de capacitação incluem cursos de desenvolvimento de software seguro para profissionais de TI, prevenção de vulnerabilidades para desenvolvedores de aplicações da web, acesso e utilização dos registros gerados por provedores de serviço de nuvem e treinamento avançado sobre engenharia social para funções de níveis estratégico da organização. Considerar as NC nº 17/IN01/DSIC/GSIPR e NC nº 18/IN01/DSIC/GSIPR. Normas de referência: NC nº 17/IN01/DSIC/GSIPR; NC nº 18/IN01/DSIC/GSIPR; IN GSI/PR nº 5/2021, art. 13, VII e art. 16, I; Decreto nº 12.572/2025, art. 3º, IV, art. 4º, VI e art. 10, V; IN GSI/PR nº 1/2020, art. 19, II.",
+      "15.1": "Estabelecer e manter o inventário de provedores de serviços que mantêm dados críticos ou são responsáveis por plataformas ou processos de TI relevantes para a organização. Este inventário deve incluir as classificações dos provedores, conforme medida 15.3, e conter seus contatos institucionais. Revisar e atualizar o inventário anualmente ou quando ocorrerem mudanças significativas do provedor que venham impactar a organização de forma significativa. Normas de referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "15.2": "Estabelecer e manter uma política de gestão de provedores de serviços. Certifique-se de que a política aborde o inventário, a categorização, a avaliação, o monitoramento e o encerramento da operação dos provedores de serviços. Revisar e atualizar a política anualmente ou quando ocorrerem mudanças significativas na organização que possam afetar esta medida. Normas de referência: IN SGD/ME nº 94/2022; IN GSI/PR nº 5/2021; IN GSI/PR nº 8/2025.",
+      "15.3": "Categorizar os provedores de serviços considerando características tais como: criticidade dos dados que trata, volume de dados, requisitos de disponibilidade, normas aplicáveis, risco inerente e risco residual. Revisar e atualizar as categorizações anualmente ou quando ocorrerem mudanças significativas na organização que possam afetar esta medida. Normas de referência: IN GSI/PR nº 5/2021, art. 3º, art. 11, III, IV, V, art. 17 e art. 18; Portaria SGD/MGI nº 5.950/2023.",
+      "15.4": "Inserir cláusulas nos contratos dos provedores de serviços que contenham requisitos de segurança da informação. Requisitos como segurança do software, resposta a incidentes de segurança, criptografia, descarte de dados, entre outros, devem ser abordadas. Tais requisitos mínimos devem ser concisos e estar de acordo com a política de gestão de provedores de serviços da organização. Revisar os contratos de provedores de forma periódica com o objetivo de atualizar e assegurar que os requisitos estão sendo cumpridos. Normas de referência: IN SGD/ME nº 94/2022; Portaria SGD/MGI nº 5.950/2023; Portarias SGD/MGI nº 750/2023 e nº 6.679/2024; Portarias SGD/MGI nº 1.070/2023 e nº 6.680/2024; Portaria SGD/MGI nº 2.715/2023; Portaria SGD/MGI nº 370/2023; IN GSI/PR nº 5/2021, arts. 16, II e III, 19, 22, 23 e 25; IN GSI/PR nº 8/2025.",
+      "15.5": "Avaliar os provedores de serviços de acordo com a política de gestão de provedores de serviços da organização. O escopo da avaliação pode variar de acordo com as classificações, podendo ser realizada por meio da análise de relatórios de avaliação padronizados, aplicação de questionários, processos rigorosos aplicáveis, entre outros. A avaliação de provedores de serviço deve ser realizada de forma periódica e na medida em que novos contratos forem estipulados ou renovados. Normas de referência: IN SGD/ME nº 94/2022; Portaria SGD/MGI nº 5.950/2023; Portarias SGD/MGI nº 750/2023 e nº 6.679/2024; Portarias SGD/MGI nº 1.070/2023 e nº 6.680/2024; Portaria SGD/MGI nº 2.715/2023; Portaria SGD/MGI nº 370/2023; IN GSI/PR nº 5/2021, art. 20; IN GSI/PR nº 8/2025, arts. 7º, 8º, 9º e 10.",
+      "15.6": "Realizar o monitoramento dos provedores de acordo com a política de gestão de provedores de serviços da organização. O monitoramento pode incluir a reavaliação periódica de conformidade do provedor, avaliação de artefatos entregues pelo provedor e monitoramento na dark web. Normas de referência: IN SGD/ME nº 94/2022; Portarias SGD/MGI nº 750/2023 e nº 6.679/2024; Portarias SGD/MGI nº 1.070/2023 e nº 6.680/2024; Portaria SGD/MGI nº 2.715/2023; Portaria SGD/MGI nº 5.950/2023; Portaria SGD/MGI nº 370/2023.",
+      "15.7": "Realizar de forma segura o encerramento de contrato de provedores e prestadores de serviço. Algumas ações que podem ser utilizadas para encerrar os contratos ou desligar os prestadores são: desativação de contas de usuário e serviço utilizados durante o contrato, encerramento de fluxo de dados e descarte seguros de dados e informações corporativas em sistemas dos provedores de serviço. Normas de referência: IN SGD/ME nº 94/2022; Portaria SGD/MGI nº 5.950/2023; IN GSI/PR nº 5/2021, art. 19, V e VI.",
+      "16.1": "Estabelecer e manter um processo de desenvolvimento seguro de aplicações. O processo deve abordar itens como: padrões de design de aplicações seguras, privacy by design, práticas de codificação seguras, treinamento de desenvolvedor, gerenciamento de vulnerabilidade, segurança de código de terceiros e procedimentos de teste de segurança de aplicativo. Revisar e atualizar a documentação anualmente ou quando ocorrerem mudanças institucionais significativas que possam impactar esta medida. Normas de referência: não identificadas.",
+      "16.2": "Estabelecer e manter um processo para receber e endereçar notificações de vulnerabilidades de software, incluindo mecanismos para recebimento de notificações pela Equipe de Prevenção, Tratamento e Resposta a Incidentes Cibernéticos (ETIR). Recomenda-se que este processo esteja alinhado com processo de gestão de vulnerabilidades organizacional e inclua itens como: critérios para aceitação de vulnerabilidades identificadas e notificadas, equipe ou profissional responsável por analisar os relatórios de vulnerabilidade e um processo de entrada, atribuição, correção e testes de correção. Como parte deste processo, é importante rastrear as vulnerabilidades, classificar a gravidade e atribuir métricas capazes de medir o tempo de identificação, análise e correção das vulnerabilidades. Deve ser realizada uma revisão e alteração deste processo periodicamente, em casos específicos ou quando ocorrerem mudanças na organização que venham impactá-la de forma significativa. Normas de referência: não identificadas.",
+      "16.3": "Executar a análise de causa raiz em vulnerabilidades de segurança. A análise da causa raiz é a tarefa capaz de avaliar os problemas subjacentes que criam vulnerabilidades no código da aplicação, e permite que as equipes de desenvolvimento, para além de atuarem apenas na vulnerabilidade, corrijam a causa raiz. Normas de referência: não identificadas.",
+      "16.4": "Estabelecer e manter um inventário atualizado de componentes de software de terceiros usados no desenvolvimento e de componentes programados para uso futuro. Este inventário deve incluir quaisquer riscos que cada componente de terceiros possa representar para a organização. Deve ser realizada uma revisão e alteração deste inventário periodicamente, com o objetivo de identificar quaisquer mudanças ou atualizações nesses componentes e validar a compatibilidade destas. Normas de referência: IN GSI/PR nº 3/2021, Capítulo II.",
+      "16.5": "Utilizar apenas componentes de terceiros atualizados e confiáveis. Quando possível, escolher bibliotecas e estruturas pré-estabelecidas e comprovadas que forneçam a segurança adequada. É importante adquirir tais componentes de fornecedores e fontes confiáveis ou realizar a avaliação de vulnerabilidades do software antes de utilizá-las. Normas de referência: não identificadas.",
+      "16.6": "Estabelecer e manter um processo para a classificação do grau de severidade das vulnerabilidades de aplicações, capaz de facilitar a priorização à medida que as vulnerabilidades descobertas são corrigidas. Este processo deve incluir a definição de um nível mínimo de aceitabilidade de segurança para a liberação de código ou aplicações. A classificação da severidade deve trazer uma forma sistemática de triagem de vulnerabilidades que venha a melhorar a gestão de riscos e assegurar que os bugs mais graves sejam priorizados. Revisar o processo e a classificação de vulnerabilidades periodicamente. Normas de referência: não identificadas.",
+      "16.7": "Adotar configurações de segurança padronizadas para todos os componentes da infraestrutura de aplicações, incluindo servidores, bancos de dados, servidores web, contêineres, e serviços baseados em Plataforma como Serviço (PaaS) e componentes de Software como Serviço (SaaS). A organização deve adotar configurações de padrões reconhecidos tais como o CIS Benchmarks, NIST ou recomendações do fornecedor. Deve-se garantir que soluções de software desenvolvidas internamente não alterem ou enfraqueçam essas configurações, e quaisquer exceções devem ser formalmente justificadas, aprovadas e documentadas. A conformidade com as configurações deverá ser verificada regularmente por auditorias ou ferramentas automatizadas. Normas de referência: não identificadas.",
+      "16.8": "Manter ambientes separados para sistemas de produção e não produção. Normas de referência: não identificadas.",
+      "16.9": "Treinar todos os responsáveis pelo desenvolvimento de software sobre escrever código seguro e sobre suas responsabilidades específicas. O treinamento deve incluir princípios gerais de segurança e práticas padrão de segurança para aplicações. Deve ser realizado pelo menos uma vez por ano e ser projetado de forma a promover a segurança dentro da equipe de desenvolvimento e criar uma cultura de segurança entre os desenvolvedores. Normas de referência: NC nº 17/IN01/DSIC/GSIPR; NC nº 18/IN01/DSIC/GSIPR; Decreto nº 12.572/2025, art. 3º, IV, art. 4º, VI e art. 10, V.",
+      "16.10": "Aplicar princípios de design seguro em arquiteturas de aplicações. Os princípios de design seguro incluem o conceito de privilégio mínimo e a aplicação de mediação para validar cada operação que o usuário faz, promovendo o conceito de “nunca confiar nas entradas do usuário”. Os exemplos incluem garantir que a verificação explícita de erros seja realizada e documentada para todas as entradas, incluindo tamanho, tipo de dados e intervalos ou formatos aceitáveis. O design seguro também significa minimizar a superfície de ataque da infraestrutura da aplicação, como desligar portas e serviços desprotegidos, remover programas e arquivos desnecessários, renomear ou remover contas padrão, entre outros. Normas de referência: não identificadas.",
+      "16.11": "Reutilizar módulos ou serviços validados quanto aos requisitos de segurança, como gestão de identidade, criptografia e auditoria de logs. O uso de recursos nativos de sistemas operacionais ou ambientes de desenvolvimento em funções críticas de segurança reduz a carga de trabalho dos desenvolvedores e minimiza a probabilidade de erros de design ou de implementação. Os sistemas operacionais modernos fornecem mecanismos eficazes para identificação, autenticação, autorização, criação e manutenção de logs de auditoria, disponibilizando tais mecanismos para as aplicações. Usar apenas algoritmos de criptografia padronizados, atualmente aceitos e amplamente revisados. Normas de referência: não identificadas.",
+      "16.12": "Utilizar ferramentas de análise estáticas e dinâmicas, Static Application Security Testing (SAST) e Dynamic Application Security Testing (DAST), dentro do ciclo de vida da aplicação para verificar se as práticas de codificação seguras estão sendo utilizadas na organização. Normas de referência: não identificadas.",
+      "16.13": "Realizar testes de intrusão em aplicações. Para aplicações críticas, o teste de intrusão autenticado é mais adequado para localizar vulnerabilidades de codificação e de negócios do que a varredura de código e o teste de segurança automatizados. O teste de intrusão depende da habilidade do testador para manipular manualmente uma aplicação como um usuário autenticado e não autenticado. Normas de referência: Decreto nº 12.573/2025, art. 4º, IV, art. 4º, IX.",
+      "16.14": "Realizar a modelagem de ameaças. A modelagem de ameaças é o processo de identificar e abordar as falhas de design de segurança da aplicação em um projeto, antes que o código seja criado. É conduzido por profissionais especialmente treinados que avaliam o design da aplicação e medem os riscos de segurança para cada ponto de entrada e nível de acesso. O objetivo é mapear a aplicação, a arquitetura e a infraestrutura de uma forma estruturada para entender todos os pontos fracos. Normas de referência: não identificadas.",
+      "17.1": "Designar formalmente o agente responsável, e respectivo substituto, entre servidores públicos ocupantes de cargo efetivo ou militares de carreira da organização. Compete ao agente responsável chefiar e gerenciar a Equipe de Prevenção, Tratamento e Resposta a Incidentes Cibernéticos (ETIR), além de criar os procedimentos internos, distribuir tarefas para a ETIR e ser a interface com o Centro de Prevenção, Tratamento e Resposta a Incidentes Cibernéticos de Governo (CTIR Gov). Normas de referência: IN GSI/PR nº 1/2020, art. 15, IV; NC n° 05/IN01/DSIC/GSIPR.",
+      "17.2": "Estabelecer e manter informações de contato para as partes que precisam ser informadas sobre incidentes de segurança da informação, tais como equipe interna, provedores de serviço, unidade jurídica, provedores de seguro de cibersegurança, áreas de comunicação interna. A comunicação deve ocorrer entre a Equipe de Prevenção, Tratamento e Resposta a Incidentes Cibernéticos (ETIR) e, no mínimo, o Centro de Prevenção, Tratamento e Resposta a Incidentes Cibernéticos de Governo (CTIR Gov) e o Centro Integrado de Segurança Cibernética do Governo Digital (CISC Gov.br). Verificar os contatos periodicamente para garantir que as informações estejam atualizadas. Normas de referência: NC nº 21/IN01/DSIC/GSIPR, 8; NC n° 05/IN01/DSIC/GSIPR, 10.6.",
+      "17.3": "Estabelecer e manter um processo institucional para que os agentes públicos e demais pessoas possam notificar incidentes de segurança da informação. O processo deve incluir o prazo e o mecanismo para a comunicação, o pessoal a quem comunicar e as informações mínimas a serem comunicadas. É importante certificar-se de que o processo está publicamente disponível para todos os agentes públicos da organização. Deve ser realizada uma revisão periódica deste processo ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de referência: NC nº 21/IN01/DSIC/GSIPR, Anexo A, 6.",
+      "17.4": "Estabelecer e manter um processo de gestão de incidentes de segurança da informação que aborde as funções e responsabilidades, o plano de comunicação, o fluxo para o tratamento dos incidentes, o adequado registro das evidências e os requisitos de conformidade, considerando a NC nº 08/IN01/DSIC/GSIPR, a NC nº 21/IN01/DSIC/GSIPR e normas correlatas. Realizar a revisão deste processo de forma periódica ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de referência: NC nº 08/IN01/DSIC/GSIPR; NC nº 21/IN01/DSIC/GSIPR, 7 e 8; IN GSI/PR nº 1/2020, art. 19, X; IN GSI/PR nº 5/2021, art. 13, IV, V e VI, art. 16, IV; Portaria GSI/PR nº 120/2022.",
+      "17.5": "Atribuir as principais funções e responsabilidades para a gestão de incidentes de segurança da informação, incluindo equipe jurídica, TI, segurança da informação, instalações, relações públicas, recursos humanos, equipe de tratamento de incidentes e de analistas. Realizar a revisão deste processo de forma periódica ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de referência: NC nº 21/IN01/DSIC/GSIPR, 8; IN GSI/PR nº 1/2020, art. 19, VI, IX.",
+      "17.6": "Determinar quais mecanismos primários e secundários serão usados para notificar um incidente de segurança da informação e para se comunicar durante um incidente. Os mecanismos podem incluir ligações, mensagens, chats, e-mails, cartas, entre outros. Atentar ao fato de que certos mecanismos, como e-mails, podem ser afetados durante um incidente de segurança. Realizar a revisão desta medida de forma periódica ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de referência: NC nº 08/IN01/DSIC/GSIPR.",
+      "17.7": "Planejar e conduzir exercícios e cenários rotineiros de tratamento de incidentes de segurança da informação para a equipe envolvida, de forma a manter a conscientização e a tranquilidade no caso de resposta a ameaças reais. Os exercícios devem testar os canais de comunicação, tomada de decisão e recursos técnicos da equipe de resposta a incidentes, contemplando a utilização das ferramentas e dados disponíveis. Realizar o exercício semestralmente ou em intervalos menores. Normas de referência: não identificadas.",
+      "17.8": "Realizar análises pós-incidente de segurança da informação. As análises pós-incidente ajudam a prevenir a recorrência do incidente por meio da identificação de lições aprendidas e ações de acompanhamento. Normas de referência: não identificadas.",
+      "17.9": "Estabelecer e manter critérios para a diferenciação entre evento e incidente de segurança da informação. Os exemplos podem incluir: atividade anormal, vulnerabilidade de segurança, ameaça de segurança, violação de dados, incidente de privacidade. Realizar a revisão desta medida de forma periódica ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Normas de referência: não identificadas.",
+      "18.1": "Estabelecer e manter um programa para testes de intrusão adequado ao tamanho, à complexidade e à maturidade da organização. O programa de teste de intrusão deve levar em consideração: o escopo do teste, como rede, aplicação web, API, controles de instalações físicas; frequência; limitações, como horários aceitáveis e tipos de ataque excluídos; informações de contato; remediações, tais como o encaminhamento das descobertas internamente; e lições aprendidas. Normas de referência: Decreto nº 12.573/2025, art. 4º, IX.",
+      "18.2": "Realizar testes de intrusão externos regularmente. O teste de intrusão externo deve ser reconhecido pela organização e deve ser capaz de detectar informações exploráveis que possam impactar a segurança dos ativos institucionais e soluções de software. Tal teste deve ser realizado por profissionais qualificados. Normas de referência: não identificadas.",
+      "18.3": "Corrigir as descobertas dos testes de intrusão com base no processo de correção de vulnerabilidade da organização. Isso deve incluir a determinação de um cronograma e nível de esforço com base no impacto e na priorização de cada descoberta identificada. Normas de referência: não identificadas.",
+      "18.4": "Validar as medidas de segurança após cada teste de intrusão. Se necessário, modificar os conjuntos de regras e recursos para detectar as técnicas usadas durante o teste. Normas de referência: não identificadas.",
+      "18.5": "Realizar testes de intrusão internos periódicos com base nos requisitos do programa estabelecido pela medida 18.1. Realize o teste anualmente ou em intervalos menores. Normas de referência: não identificadas.",
+      "19.1": "Estabelecer e manter processo documentado para registro das operações de tratamento de dados pessoais, independentemente do meio em que os dados pessoais são tratados, a ser amplamente divulgado na organização, que contemple o conteúdo disposto nas medidas 19.1 a 19.4 e estabeleça a periodicidade da atualização dos registros. Normas de referência: Lei nº 13.709/2018, art. 37; Resolução CD/ANPD nº 15/2024, art. 8º.",
+      "19.2": "Assegurar que o registro das operações de tratamento de dados pessoais contemple a descrição dos fluxos dos dados pessoais, a fonte (origem), as finalidades e hipóteses do tratamento (e respectiva previsão legal, quando aplicável), os tempos de retenção, as soluções de software que viabilizam o tratamento dos dados pessoais. A descrição do fluxo de dados pessoais deve contemplar desde a coleta até o descarte, passando por todas as etapas de uso dos dados pessoais. Atentar para o adequado registro das características dos tratamentos de dados pessoais sensíveis. Normas de referência: Lei nº 13.709/2018, art. 37; Resolução CD/ANPD nº 15/2024, art. 8º.",
+      "19.3": "Assegurar que o registro das operações de tratamento de dados pessoais contemple, além do indicado nas medidas 19.2 e 19.4: os agentes de tratamento (controladores, singulares ou conjuntos, e operadores), os contratos, acordos ou instrumentos congêneres firmados com os agentes de tratamento e as abrangências geográficas do tratamento. Incluir os compartilhamentos de dados pessoais com terceiros e as transferências internacionais (com respectivos tipos de dados pessoais, finalidades e hipóteses de tratamento, além de países ou organismos internacionais para os quais os dados pessoais são transferidos). Normas de referência: Lei nº 13.709/2018, art. 37; Resolução CD/ANPD nº 15/2024, art. 8º.",
+      "19.4": "Assegurar que o registro das operações de tratamento de dados pessoais contemple, além do indicado nas medidas 19.2 e 19.3: os tipos de dados pessoais tratados, sua natureza (se sensíveis ou não) e respectiva classificação (cadastrais, financeiros, acadêmicos, dados de saúde, biométricos, entre outros); as categorias de titulares de dados pessoais (clientes, funcionários, agentes públicos, estudantes, fornecedores, entre outros). Incluir indicação sobre tratamento de dados pessoais de vulneráveis, a exemplo de crianças, adolescentes e idosos. Normas de referência: Lei nº 13.709/2018, art. 37; Resolução CD/ANPD nº 15/2024, art. 8º.",
+      "20.1": "Estabelecer, manter e implementar um processo documentado de gestão de incidentes com dados pessoais, contemplando ações para o tratamento dos incidentes, incluindo plano de resposta a incidentes e remediação, nos termos da Lei nº 13.709/2018 e da Resolução CD/ANPD nº 15/2024, que aborde funções e responsabilidades, principalmente acerca do registro do incidente e sobre a eventual comunicação do incidente à ANPD e aos titulares de dados pessoais. Realizar a revisão deste processo de forma periódica ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida. Este processo pode ser incorporado ao gerenciamento de resposta a incidentes de segurança da informação disposto no Controle 17 do PPSI. Normas de referência: Lei nº 13.709/2018, arts. 48 e 50, § 2º, I, g; Resolução CD/ANPD nº 15/2024.",
+      "20.2": "Estabelecer e manter um programa de conscientização em privacidade e proteção de dados pessoais, com os objetivos de promover tal cultura na organização, sensibilizar seus agentes públicos sobre responsabilidades e procedimentos relacionados ao tema e sobre como tratar os dados pessoais de forma segura. Revisar e atualizar o conteúdo periodicamente ou quando ocorrerem mudanças significativas na organização que possam impactar esta medida, em especial como uma das medidas de resposta a incidentes com dados pessoais. Normas de referência: Lei nº 13.709/2018, arts. 6º, VII e VIII, e arts. 46, 47 e 50.",
+      "20.3": "Incluir nos instrumentos de desenvolvimento de pessoas da organização, a exemplo do Plano de Desenvolvimento de Pessoas, as necessidades de desenvolvimento em privacidade e proteção de dados pessoais para agentes públicos que atuem em funções específicas, de modo a atender suas competências específicas, e promover a execução de tais instrumentos. Exemplos de necessidades de desenvolvimento incluem cursos de adequação de contratos e instrumentos congêneres à Lei nº 13.709/2018 e elaboração de RIPDs. Normas de referência: Lei nº 13.709/2018, arts. 6º, VII e VIII, e arts. 46, 47 e 50; Decreto nº 12.572/2025, art. 3º, IV, art. 4º, VI e art. 10, V.",
+      "20.4": "Estabelecer e manter um processo objetivando a privacidade desde a fase de concepção do produto ou do serviço até a sua execução (privacy by design), contemplando o desenvolvimento de novas iniciativas, ações, projetos ou programas que envolvam novas operações de tratamento de dados pessoais. O processo deve promover a implementação de medidas de segurança, técnicas e administrativas, incluindo as estabelecidas no PPSI. Normas de referência: Lei nº 13.709/2018, art. 46, § 2º.",
+      "21.1": "Disponibilizar ao encarregado pelo tratamento de dados pessoais os recursos necessários – entre eles humanos, técnicos e administrativos –, para que preste assistência e orientação à organização com autonomia técnica e evitando situações que possam configurar conflito de interesse. Garantir ao encarregado o acesso direto aos responsáveis, inclusive de maior nível hierárquico, pela tomada de decisões estratégicas sobre o tratamento de dados pessoais. Observar o disposto no art. 41 da Lei nº 13.709/2018, na Resolução CD/ANPD nº 18/2024 e no art. 3º da IN SGD/ME nº 117/2020. Normas de referência: Lei nº 13.709/2018, art. 41; Resolução CD/ANPD nº 18/2024, art. 10.",
+      "21.2": "Disponibilizar solução para que os titulares de dados pessoais, por meios céleres, eficazes e adequados, possam realizar solicitações e reclamações ao encarregado e receber as respectivas respostas. Normas de referência: Lei nº 13.709/2018, Capítulo III e art. 41; Resolução CD/ANPD nº 18/2024, art. 10, I.",
+      "21.3": "Estabelecer um processo documentado para atendimento de requisição do titular de dados pessoais ou de seu representante legalmente constituído. Recomenda-se que o processo inclua a identificação dos papéis e responsabilidades das unidades da organização quanto às medidas necessárias para o atendimento da solicitação, considerando principalmente as atribuições do encarregado pelo tratamento de dados pessoais dispostas na Lei nº 13.709/2018 e na Resolução CD/ANPD nº 18/2024, e inclua prazos e requisitos para o fornecimento das informações pertinentes e eventuais interações entre o encarregado e as unidades objetivando atendimento dos direitos do titular. Sugere-se consignar no processo que o requerimento será atendido sem custos para o titular e, a seu critério, as informações e dados serão fornecidos por meio eletrônico, seguro e idôneo, ou sob forma impressa. A organização deve ainda atentar para que o processo considere que os dados pessoais referentes ao exercício regular de direitos não podem ser utilizados em prejuízo do titular. Normas de referência: Lei nº 13.709/2018, Capítulo III e arts. 23, 41, 48 e 50; Resolução CD/ANPD nº 18/2024, art. 10, IV.",
+      "21.4": "Divulgar publicamente e manter atualizados, no mínimo, o nome completo e as informações de contato do encarregado pelo tratamento de dados pessoais e de seu substituto – em local de destaque e de fácil acesso no sítio eletrônico, de forma clara e objetiva –, viabilizando também o exercício de direitos pelos titulares e o recebimento de comunicações da ANPD. Normas de referência: Lei nº 13.709/2018, art. 41; Resolução CD/ANPD nº 18/2024, arts. 8º e 9º.",
+      "21.5": "Solicitar assistência e orientação do encarregado quando realizar atividades e tomar decisões estratégicas referentes ao tratamento de dados pessoais. Exemplos de implementações desta medida incluem: elaborar e divulgar procedimento e tecnologia para registro das solicitações ao encarregado; divulgar internamente o canal de contato com o encarregado e sua atribuição quanto ao fornecimento de orientações ao controlador. Normas de referência: Lei nº 13.709/2018, art. 41; Resolução CD/ANPD nº 18/2024, arts. 10, II, e 16.",
+      "21.6": "Estabelecer um processo documentado para revisar, a pedido do titular ou do seu representante legal, as decisões tomadas unicamente com base em tratamento automatizado de dados pessoais que afetem os interesses do titular, inclusive aquelas decisões que definam seu perfil pessoal, profissional, de consumo e de crédito ou os aspectos de sua personalidade. O processo deve prever o fornecimento, quando solicitado, de informações claras e adequadas acerca dos critérios e procedimentos utilizados para a tomada de decisões automatizadas pela organização. Normas de referência: Lei nº 13.709/2018, art. 20.",
+      "22.1": "Estabelecer e manter contratos, convênios e instrumentos congêneres com agentes de tratamento de dados pessoais. Nas situações em que a organização realiza compartilhamento restrito e específico de dados pessoais, formalizá-lo por meio do documento de interoperabilidade, disposto no Decreto nº 10.046/2019. Recomenda-se que referidos documentos contenham os papéis e responsabilidades dos agentes envolvidos, além de cláusulas que objetivem garantir a adoção de medidas técnicas (ex.: criptografia, controle de acesso, pseudonimização e testes de intrusão) e administrativas (ex.: termos de responsabilidade, acordos de confidencialidade e termos de sigilo) adequadas para o cumprimento dos princípios, dos direitos do titular e do regime de proteção de dados pessoais previstos na Lei nº 13.709/2018, incluindo as resoluções da ANPD aplicáveis, a exemplo da adoção das cláusulas-padrão contratuais estabelecidas na Resolução CD/ANPD nº 19/2024 para as operações de tratamento que envolvam transferência internacional de dados pessoais. Normas de referência: Lei nº 13.709/2018, arts. 16, 33, 39, 42, 46, 47, 49, 50 e 52; Resolução CD/ANPD nº 19/2024, Anexo, arts. 2º, 17 e 27; IN SGD/ME nº 94/2022; Portarias SGD/MGI nº 5.950/2023, nº 750/2023, nº 6.679/2024, nº 1.070/2023, nº 6.680/2024, nº 2.715/2023 e nº 370/2023.",
+      "22.2": "Avaliar se os agentes de tratamento aplicam as medidas técnicas e administrativas estabelecidas em contrato, convênio ou instrumento congênere. O escopo da avaliação pode variar de acordo com a complexidade do tratamento de dados pessoais e os riscos no tratamento (tratamento de dados pessoais sensíveis; ocorrência de transferência internacional de dados pessoais, considerando o Capítulo V da Lei nº 13.709/2018 e a Resolução CD/ANPD nº 19/2024; tratamento de dados pessoais de crianças, adolescentes ou idosos; entre outros), podendo ser realizado por meio da análise de relatórios de avaliação padronizados e aplicação de questionários. A avaliação dos agentes de tratamento deve ser realizada de forma periódica e na medida que contratos, acordos de cooperação ou instrumentos congêneres forem firmados ou atualizados. Normas de referência: Lei nº 13.709/2018, arts. 16, 33, 39, 42, 46, 47, 49, 50 e 52; Resolução CD/ANPD nº 19/2024, Anexo, arts. 2º, 17 e 27; IN SGD/ME nº 94/2022; Portarias SGD/MGI nº 5.950/2023, nº 750/2023, nº 6.679/2024, nº 1.070/2023, nº 6.680/2024, nº 2.715/2023 e nº 370/2023.",
+      "22.3": "Realizar de forma segura o encerramento de contrato, acordo ou instrumento congênere, considerando inclusive o disposto na Resolução CD/ANPD nº 19/2024. Algumas ações que podem ser utilizadas para realizar este encerramento são: solicitar anonimização, devolução ou descarte com segurança dos dados pessoais tratados; encerrar o fluxo de dados pessoais. Normas de referência: Lei nº 13.709/2018, arts. 15, 16, 39, 42, 46, 47, 49, 50; Resolução CD/ANPD nº 19/2024, Anexo, arts. 2º, 17 e 27; IN SGD/ME nº 94/2022; Portaria SGD/MGI nº 5.950/2023.",
+      "22.4": "Revisar e adaptar os contratos, acordos de cooperação e instrumentos congêneres vigentes em que há tratamento de dados pessoais, de modo a adequá-los à Lei nº 13.709/2018 e a normas correlatas, considerando também as medidas deste Controle 22 e a Resolução CD/ANPD nº 19/2024. Normas de referência: Lei nº 13.709/2018, arts. 16, 33, 39, 42, 46, 47, 49, 50 e 52; Resolução CD/ANPD nº 19/2024, Anexo, arts. 2º, 17 e 27; IN SGD/ME nº 94/2022; Portarias SGD/MGI nº 5.950/2023, nº 750/2023, nº 6.679/2024, nº 1.070/2023, nº 6.680/2024, nº 2.715/2023 e nº 370/2023.",
+      "23.1": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, analisar e promover os ajustes para garantir que a organização realiza o tratamento de dados pessoais para o atendimento de finalidade pública, na persecução do interesse público, com o objetivo de executar as competências legais ou cumprir as atribuições legais do serviço público. Normas de referência: Lei nº 13.709/2018, arts. 7º, 11 e 23.",
+      "23.2": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, analisar o tratamento – quer seja de dado pessoal, dado pessoal sensível ou ambos –, e garantir que a hipótese de tratamento (base legal), disposta no art. 7º ou no art. 11 da Lei nº 13.709/2018, esteja adequada ao caso concreto. Considerar na análise e garantia da conformidade, principalmente, os requisitos da respectiva hipótese de tratamento estabelecidos na Lei nº 13.709/2018, registrando as evidências da análise. Normas de referência: Lei nº 13.709/2018, arts. 7º e 11.",
+      "23.3": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, avaliar se podem gerar riscos às liberdades civis e aos direitos fundamentais dos titulares; em caso positivo, elaborar o RIPD contendo, no mínimo, o disposto na Lei nº 13.709/2018, art. 38, parágrafo único: a descrição dos tipos de dados pessoais coletados; a metodologia aplicada para a coleta e o armazenamento; as medidas adotadas para garantir a segurança das informações; e a análise do controlador quanto aos riscos à privacidade e às salvaguardas implementadas para mitigá-los. Normas de referência: Lei nº 13.709/2018, arts. 5º, XVII, 10, § 3º, 32 e 38.",
+      "23.4": "Na hipótese de a organização ser órgão de pesquisa (conforme disposto no inciso XVIII do art. 5º da Lei nº 13.709/2018), para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, identificar a ocorrência de realização de estudos em saúde pública. Para tais operações, promover a implementação de políticas e processos internos, aplicando medidas técnicas para assegurar que os dados pessoais sejam mantidos dentro da organização, em ambiente controlado e seguro, e considerando os padrões éticos relacionados a estudos e pesquisas, conforme Lei nº 13.709/2018, art. 13. Ademais, anonimizar ou pseudonimizar os dados sempre que possível, e impedir que a divulgação dos resultados ou de qualquer excerto do estudo ou da pesquisa revele dados pessoais. Normas de referência: Lei nº 13.709/2018, art. 13.",
+      "23.5": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, avaliar e implementar medidas para garantir que o melhor interesse de crianças e adolescentes ocorra quando do tratamento de seus dados pessoais, conforme Lei nº 13.709/2018, art. 14, e Enunciado nº 1/2023 da ANPD. Normas de referência: Lei nº 13.709/2018, art. 14; Enunciado nº 1/2023 da ANPD.",
+      "23.6": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, aplicar medidas de anonimização de dados pessoais quando necessário, conforme disposto na Lei nº 13.709/2018 e normas complementares. Normas de referência: Lei nº 13.709/2018, arts. 7º, 11, 12, 13, 16 e 18.",
+      "23.7": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, implementar procedimentos para assegurar o término do tratamento dos dados pessoais, conforme as situações previstas na Lei nº 13.709/2018, art. 15, e sua posterior eliminação, em observância ao disposto no art. 16 quanto à retenção legalmente obrigatória. Normas de referência: Lei nº 13.709/2018, arts. 15 e 16.",
+      "24.1": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, manter os dados pessoais em formato interoperável e estruturado para o uso compartilhado, nos termos do art. 25 da Lei nº 13.709/2018, do Decreto nº 10.046/2019 e de normas correlatas. Normas de referência: Lei nº 13.709/2018, art. 25; Decreto nº 10.046/2019.",
+      "24.2": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, realizar análise dos compartilhamentos de dados pessoais e implementar mecanismos para que as finalidades dos compartilhamentos atendam políticas públicas e atribuições legais da organização, em conformidade com a Lei nº 13.709/2018, art. 26 e normas correlatas. Normas de referência: Lei nº 13.709/2018, art. 26; Decreto nº 10.046/2019.",
+      "24.3": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, efetuar análise dos compartilhamentos de dados pessoais realizados com pessoas jurídicas de direito privado (controladores) e garantir a conformidade com a Lei nº 13.709/2018, art. 27. Normas de referência: Lei nº 13.709/2018, art. 27.",
+      "24.4": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, estabelecer e manter procedimentos para comunicar os agentes de tratamento, com os quais compartilhou dados pessoais, sobre correção, eliminação, anonimização ou bloqueio dos referidos dados, objetivando que tais agentes repitam o procedimento – exceto nos casos em que a comunicação seja comprovadamente impossível ou implique esforço desproporcional. Normas de referência: Lei nº 13.709/2018, art. 18, § 6º.",
+      "24.5": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, identificar aquelas que envolvem transferências internacionais de dados pessoais e promover os respectivos ajustes para conformidade ao disposto na Lei nº 13.709/2018 e aos procedimentos e regras estabelecidos na Resolução CD/ANPD nº 19/2024. Normas de referência: Lei nº 13.709/2018, Capítulo V; Resolução CD/ANPD nº 19/2024.",
+      "25.1": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, analisar se o tratamento é realizado para propósitos legítimos (lícitos, considerando a Lei nº 13.709/2018 e demais legislações aplicáveis), específicos (não devem ser genéricos ou amplos), explícitos (devem ser claros e precisos, evitando qualquer ambiguidade) e informados ao titular (apresentados aos titulares por meio de avisos de privacidade, conforme disposto na medida 25.6). Normas de referência: Lei nº 13.709/2018, art. 6º, I, IV e VI.",
+      "25.2": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, analisar e promover os ajustes para garantir que o tratamento de dados pessoais seja compatível com as finalidades informadas ao titular, de acordo com o contexto do tratamento. Normas de referência: Lei nº 13.709/2018, art. 6º, I, II, IV e VI.",
+      "25.3": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, a organização deve analisar e promover os ajustes objetivando tratar apenas os dados pessoais estritamente necessários para o cumprimento das finalidades informadas ao titular, abrangendo os dados pertinentes, proporcionais e não excessivos em relação às finalidades do tratamento de dados pessoais. Normas de referência: Lei nº 13.709/2018, arts. 6º, III e 7º, III, 10, § 1º, 11, II, b) e 15, I.",
+      "25.4": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, a organização deve garantir consulta facilitada e gratuita sobre a forma e a duração do tratamento dos dados pessoais, em atendimento também à medida 25.6. Ademais, garantir consulta facilitada do titular à integralidade de seus dados pessoais, seja exercendo seu direito de acesso via solicitação ao encarregado (medidas 21.2 e 21.3) ou de forma direta por meio de solução de software. Normas de referência: Lei nº 13.709/2018, arts. 6º, IV, VI, 9º, 14, § 6º, 18, 19, 20, 23, I, e 33, VIII.",
+      "25.5": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, a organização deve analisar e promover os ajustes para garantir aos titulares que os dados pessoais tratados sejam exatos, claros, relevantes e atualizados, de acordo com a necessidade. Estabelecer processos documentados que possibilitem a revisão e correção de dados pessoais incorretos, incompletos ou desatualizados. Oferecer aos titulares mecanismos, tais como soluções de software, para retificar seus dados. Integrar validações automáticas e manuais nos sistemas para melhorar a precisão dos dados pessoais tratados. Normas de referência: Lei nº 13.709/2018, arts. 6º, V, VII, 46, 47 e 49.",
+      "25.6": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, a organização deve analisar a necessidade de elaborar avisos de privacidade. Tais avisos devem conter informações claras, precisas e facilmente acessíveis aos titulares sobre as operações de tratamento de dados pessoais realizadas, inclusive atendendo à necessidade de as informações serem compreensíveis ao público-alvo, eventualmente não familiarizado com as tecnologias da informação, internet ou jargões jurídicos. Recomenda-se que os avisos de privacidade contemplem minimamente as informações dispostas na Lei nº 13.709/2018, art. 9º e art. 23, I, além da Resolução CD/ANPD nº 19/2024, Anexo, art. 17, § 2º; e, para o tratamento de dados pessoais sensíveis, considerar a Lei nº 13.709/2018, art. 11, § 2º. Ademais, nas situações em que o tratamento envolver dados pessoais de crianças e adolescentes, considerar a Lei nº 13.709/2018, art. 14, § 6º. Normas de referência: Lei nº 13.709/2018, arts. 6º, VI, 9º, 14, § 6º, 18, 19, 20, 23, I, e 33, VIII.",
+      "25.7": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, a organização deve implementar medidas técnicas e administrativas para proteger os dados pessoais contra acessos não autorizados; situações acidentais ou ilícitas de destruição, perda, alteração, comunicação ou difusão; vazamentos e outros tipos de incidentes (também em atendimento à medida 25.8). Normas de referência: Lei nº 13.709/2018, arts. 6º, VII, 46, 47 e 49.",
+      "25.8": "Para cada uma das operações de tratamento de dados pessoais registrada em decorrência do Controle 19, a organização deve implementar mecanismos de mitigação de riscos e medidas que previnam a ocorrência de danos no tratamento de dados pessoais (também em razão da medida 0.17). Para os tratamentos que possam gerar riscos às liberdades civis e aos direitos fundamentais, elaborar relatórios de impactos à proteção de dados pessoais (RIPD), igualmente em atendimento à medida 23.3. Estabelecer procedimento ou metodologia para assegurar a privacidade desde a fase de concepção do produto ou do serviço até a sua execução, conforme previsto na medida 20.4. Normas de referência: Lei nº 13.709/2018, art. 6º, V, VIII, e 46.",
+      "25.9": "Para cada uma das operações de tratamento de dados pessoais registradas em decorrência do Controle 19, analisar e promover ajustes para garantir que o tratamento de dados pessoais não seja realizado para fins discriminatórios, ilícitos ou abusivos, inclusive nos tratamentos automatizados de dados pessoais. Normas de referência: Lei nº 13.709/2018, art. 6º, IX, e 20, § 2º.",
+      "25.10": "Garantir que todas as medidas implementadas com o objetivo de assegurar a conformidade às normas de proteção de dados pessoais sejam devidamente evidenciadas, de forma sistemática e auditável, registrando inclusive a eficácia das medidas. Isto inclui o registro de evidências tais como: o PGP; o registro das operações de tratamento e as respectivas ações para conformidade; as solicitações formuladas pelos agentes públicos ao encarregado e suas respectivas orientações; o atendimento aos direitos dos titulares; os RIPDs; as ações de conscientização e de treinamento; o relatório anual contemplando indicadores que sintetizem as ações adotadas para assegurar a conformidade às normas protetivas de dados pessoais, incluindo controles e medidas do PPSI; entre outros.",
+    };
+
+
+    // ═══════════════════════════════════════════════════════════
+    // APP — lógica de interface
+    // ═══════════════════════════════════════════════════════════
+
+    const grid = document.getElementById('group-grid');
+    const panel = document.getElementById('risk-panel');
+    const rTitle = document.getElementById('panel-title');
+    const rList = document.getElementById('risk-list');
+
+    let activeGroupBtn = null;
+    let savedAssessments = {}; // uid -> { impact, prob, level, group, risk, riskIndex, uid }
+    const STORAGE_KEY = 'risk-assessments';
+
+    // ─── Resiliência a dados antigos/corrompidos ───
+    // Avaliações salvas por versões anteriores do app podem não conter
+    // riskIndex/uid, ou podem referenciar um grupo/risco que não existe
+    // mais (ex: grupo renomeado). Esta função normaliza e descarta entradas
+    // que não puderem ser resolvidas, evitando o erro
+    // "Cannot read properties of undefined (reading 'measures')".
+    function sanitizeAssessments(raw) {
+      const clean = {};
+      Object.entries(raw || {}).forEach(([uid, entry]) => {
+        if (!entry || !entry.group || !DATA[entry.group]) return; // grupo inexistente
+
+        let riskIndex = entry.riskIndex;
+        const risksArr = DATA[entry.group].risks;
+
+        // riskIndex ausente, inválido ou fora do range -> tenta recuperar pelo nome do risco
+        if (typeof riskIndex !== 'number' || riskIndex < 0 || riskIndex >= risksArr.length || !risksArr[riskIndex]) {
+          const foundIdx = risksArr.findIndex(r => r.risk === entry.risk);
+          if (foundIdx === -1) return; // risco não encontrado, descarta entrada órfã
+          riskIndex = foundIdx;
+        }
+
+        const normalizedUid = entry.uid || uid;
+        clean[normalizedUid] = {
+          impact: entry.impact,
+          prob: entry.prob,
+          level: entry.level,
+          group: entry.group,
+          risk: risksArr[riskIndex].risk,
+          riskIndex,
+          uid: normalizedUid,
+        };
+      });
+      return clean;
+    }
+
+    // ─── Load persisted assessments ───
+    function loadAssessments() {
+      try {
+        if (window.storage && typeof window.storage.get === 'function') {
+          window.storage.get(STORAGE_KEY, false)
+            .then(result => {
+              let parsed = {};
+              if (result && result.value) {
+                try { parsed = JSON.parse(result.value); } catch (e) { parsed = {}; }
+              }
+              savedAssessments = sanitizeAssessments(parsed);
+              renderDashboard();
+            })
+            .catch(() => {
+              loadFromLocalStorage();
+              renderDashboard();
+            });
+          return;
+        }
+      } catch (e) { /* fall through to localStorage */ }
+
+      loadFromLocalStorage();
+      renderDashboard();
+    }
+
+    function loadFromLocalStorage() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        const parsed = raw ? JSON.parse(raw) : {};
+        savedAssessments = sanitizeAssessments(parsed);
+      } catch (e) {
+        savedAssessments = {};
+      }
+    }
+
+    function saveAssessments() {
+      // Mirror to localStorage as a reliable fallback
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(savedAssessments));
+      } catch (e) { /* localStorage unavailable, ignore */ }
+
+      try {
+        if (window.storage && typeof window.storage.set === 'function') {
+          window.storage.set(STORAGE_KEY, JSON.stringify(savedAssessments), false)
+            .catch(err => console.error('Erro ao salvar no storage do artifact:', err));
+        }
+      } catch (e) {
+        console.error('Erro ao salvar avaliação:', e);
+      }
+    }
+
+    // ─── Build group buttons ───
+    function buildGroupGrid() {
+      grid.innerHTML = '';
+      Object.entries(DATA).forEach(([group, { icon, risks }]) => {
+        const btn = document.createElement('button');
+        btn.className = 'group-btn';
+        btn.innerHTML = `
+      <div class="btn-icon">${icon}</div>
+      <div>
+        <div class="btn-label">${group}</div>
+        <div class="btn-count">${risks.length} riscos</div>
+      </div>
+    `;
+        btn.addEventListener('click', () => openGroup(btn, group, risks));
+        grid.appendChild(btn);
+      });
+    }
+    buildGroupGrid();
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function openGroup(btn, group, risks) {
+      if (activeGroupBtn) activeGroupBtn.classList.remove('active');
+      activeGroupBtn = btn;
+      btn.classList.add('active');
+
+      rTitle.innerHTML = `<span>${DATA[group].icon}</span> ${group}`;
+      rList.innerHTML = '';
+
+      // Texto introdutório (ajuste pedido no documento de refinamento)
+      const intro = document.createElement('p');
+      intro.className = 'group-intro';
+      intro.textContent = `Este grupo é composto por ${risks.length} riscos de segurança da informação. Analise os riscos apresentados e selecione aqueles que sejam pertinentes à realidade da sua organização, considerando seu contexto operacional, seus ativos de informação e seus objetivos institucionais.`;
+      rList.appendChild(intro);
+
+      risks.forEach((r, i) => {
+        const uid = `${group}__${i}`.replace(/[^a-zA-Z0-9]/g, '_');
+        const card = document.createElement('div');
+        card.className = 'risk-card';
+        card.style.animationDelay = `${i * 0.025}s`;
+
+        const saved = savedAssessments[uid];
+
+        card.innerHTML = `
+      <div class="risk-card-head">
+        <div class="risk-dot"></div>
+        <span class="risk-index">${String(i + 1).padStart(2, '0')}</span>
+        <span class="risk-name">${r.risk}</span>
+        <span class="risk-level-pill" id="pill-${uid}"></span>
+      </div>
+      <div class="risk-actions">
+        <button class="action-btn" id="btn-level-${uid}" onclick="toggleSection('level-${uid}', this)">
+          Nível de Risco <span class="chev">▾</span>
+        </button>
+        <button class="action-btn" id="btn-measures-${uid}" onclick="toggleSection('measures-${uid}', this)">
+          Medida (PPSI 2.0) <span class="chev">▾</span>
+        </button>
+      </div>
+
+      <div class="expand-section" id="section-level-${uid}">
+        <div class="calc-grid">
+          <div class="calc-field">
+            <label>Impacto</label>
+            <select id="impact-${uid}" onchange="computeLevel('${uid}', '${group}', ${i})">
+              <option value="">Selecione...</option>
+              ${IMPACT_OPTIONS.map(o => `<option value="${o}" ${saved && saved.impact === o ? 'selected' : ''}>${o}</option>`).join('')}
+            </select>
+          </div>
+          <div class="calc-field">
+            <label>Probabilidade</label>
+            <select id="prob-${uid}" onchange="computeLevel('${uid}', '${group}', ${i})">
+              <option value="">Selecione...</option>
+              ${PROB_OPTIONS.map(o => `<option value="${o}" ${saved && saved.prob === o ? 'selected' : ''}>${o}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+
+        <div class="level-result" id="result-${uid}">
+          <div class="lr-dot"></div>
+          <span id="result-text-${uid}"></span>
+          <span class="saved-tag" id="saved-tag-${uid}">✓ salvo</span>
+        </div>
+
+        <button class="info-toggle" onclick="toggleInfo('${uid}')">ℹ️ Ver definições de Impacto, Probabilidade e Nível de Risco</button>
+
+        <div class="info-box" id="info-${uid}">
+          ${buildMatrixTableHTML()}
+
+          <h4>Escala de Impacto</h4>
+          ${IMPACT_INFO.map(x => `<div class="info-row"><div class="ir-label">${x.label}</div><div class="ir-desc">${x.desc}</div></div>`).join('')}
+
+          <h4>Escala de Probabilidade</h4>
+          ${PROB_INFO.map(x => `<div class="info-row"><div class="ir-label">${x.label}</div><div class="ir-desc">${x.desc}</div></div>`).join('')}
+
+          <h4>Níveis de Risco</h4>
+          ${RISK_LEVEL_INFO.map(x => `<div class="info-row"><div class="ir-label" style="color:${LEVEL_COLOR[x.label]}">${x.label}</div><div class="ir-desc">${x.desc}</div></div>`).join('')}
+        </div>
+      </div>
+
+      <div class="expand-section" id="section-measures-${uid}">
+        ${r.measures.map((m, mi) => buildMeasureCardHTML(m, `${uid}-${mi}`)).join('')}
+      </div>
+    `;
+
+        rList.appendChild(card);
+
+        // Render previously saved result, if any
+        if (saved && saved.impact && saved.prob) {
+          showLevelResult(uid, saved.level);
+        }
+      });
+
+      panel.style.display = 'block';
+      panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ─── Measure card with clickable detail expansion ───
+    function buildMeasureCardHTML(m, measureUid) {
+      const detail = MEASURE_DETAILS[m.id];
+      return `
+    <div class="measure-card-wrap">
+      <div class="measure-card ${detail ? 'clickable' : ''}" ${detail ? `onclick="toggleMeasureDetail('${measureUid}')"` : ''}>
+        <div class="measure-id">${m.id}</div>
+        <div class="measure-text">${m.text}</div>
+        ${detail ? `<span class="measure-chev" id="mchev-${measureUid}">▾</span>` : ''}
+      </div>
+      ${detail ? `
+        <div class="measure-detail" id="mdetail-${measureUid}">
+          <div class="measure-detail-label">Detalhamento da Medida</div>
+          <div class="measure-detail-text">${detail}</div>
+        </div>
+      ` : ''}
+    </div>
+  `;
+    }
+
+    function toggleMeasureDetail(measureUid) {
+      const box = document.getElementById('mdetail-' + measureUid);
+      const chev = document.getElementById('mchev-' + measureUid);
+      if (!box) return;
+      const isOpen = box.classList.contains('open');
+      box.classList.toggle('open', !isOpen);
+      if (chev) chev.classList.toggle('open', !isOpen);
+    }
+
+    function toggleSection(id, btn) {
+      const section = document.getElementById('section-' + id);
+      const isOpen = section.classList.contains('open');
+      section.classList.toggle('open', !isOpen);
+      btn.classList.toggle('open', !isOpen);
+    }
+
+    function toggleInfo(uid) {
+      document.getElementById('info-' + uid).classList.toggle('open');
+    }
+
+    // ─── Build the official 5x5 visual matrix (Impacto x Probabilidade) ───
+    function buildMatrixTableHTML() {
+      const { impacts, probs } = RISK_MATRIX_GRID;
+      let html = `<h4>Matriz Impacto × Probabilidade</h4><div class="matrix-wrap"><table class="risk-matrix-table">`;
+
+      // Linha 1: célula IMPACTO (rowspan cobre header + todas linhas de dados)
+      //          + célula vazia (canto) + cabeçalho PROBABILIDADE
+      html += `<tr>`;
+      html += `<th class="mx-label-impacto" rowspan="${impacts.length + 2}"><div class="mx-impacto-text">Impacto</div></th>`;
+      html += `<th class="mx-corner"></th>`;
+      html += `<th class="mx-head" colspan="${probs.length}">Probabilidade</th>`;
+      html += `</tr>`;
+
+      // Linha 2: célula vazia (alinha com nomes de impacto) + nomes das probabilidades
+      html += `<tr>`;
+      html += `<th class="mx-corner"></th>`;
+      probs.forEach(p => { html += `<th class="mx-prob">${p}</th>`; });
+      html += `</tr>`;
+
+      // Linhas de dados: nome do impacto + células
+      impacts.forEach(imp => {
+        html += `<tr>`;
+        html += `<th class="mx-impact">${imp}</th>`;
+        probs.forEach(prob => {
+          const level = RISK_MATRIX[`${imp}|${prob}`];
+          const color = LEVEL_COLOR[level] || '#888';
+          html += `<td class="mx-cell" style="background:${hexToRgba(color, 0.85)};color:#0b0f1a">${level ? level.replace('Risco ', '') : '—'}</td>`;
+        });
+        html += `</tr>`;
+      });
+
+      html += `</table></div>`;
+      return html;
+    }
+
+    function computeLevel(uid, group, riskIndex) {
+      const impactEl = document.getElementById('impact-' + uid);
+      const probEl = document.getElementById('prob-' + uid);
+      if (!impactEl || !probEl) return;
+
+      const impact = impactEl.value;
+      const prob = probEl.value;
+
+      if (!impact || !prob) {
+        const rb = document.getElementById('result-' + uid);
+        const pl = document.getElementById('pill-' + uid);
+        if (rb) rb.style.display = 'none';
+        if (pl) pl.style.display = 'none';
+        delete savedAssessments[uid];
+        saveAssessments();
+        renderDashboard();
+        return;
+      }
+
+      // Guard: invalid group/riskIndex should never happen from the UI, but
+      // we defend against it to avoid runtime crashes (e.g. stale onclick
+      // handlers after a data reload).
+      if (!DATA[group] || !DATA[group].risks[riskIndex]) {
+        console.error('computeLevel: grupo ou índice de risco inválido', { group, riskIndex });
+        return;
+      }
+
+      const key = `${impact}|${prob}`;
+      const level = RISK_MATRIX[key];
+      if (!level) {
+        console.error('computeLevel: combinação Impacto/Probabilidade não mapeada na matriz', key);
+        return;
+      }
+
+      showLevelResult(uid, level);
+
+      // Persist
+      const riskName = DATA[group].risks[riskIndex].risk;
+      savedAssessments[uid] = { impact, prob, level, group, risk: riskName, riskIndex, uid };
+      saveAssessments();
+      renderDashboard();
+
+      // Brief "saved" confirmation flash
+      const tag = document.getElementById('saved-tag-' + uid);
+      if (tag) {
+        tag.classList.add('show');
+        setTimeout(() => tag.classList.remove('show'), 1600);
+      }
+    }
+
+    function showLevelResult(uid, level) {
+      const resultBox = document.getElementById('result-' + uid);
+      const resultText = document.getElementById('result-text-' + uid);
+      const pill = document.getElementById('pill-' + uid);
+      if (!resultBox || !resultText || !pill) return;
+
+      const color = LEVEL_COLOR[level] || '#888';
+
+      resultBox.style.display = 'flex';
+      resultBox.style.background = hexToRgba(color, 0.1);
+      resultBox.style.borderColor = color;
+      resultBox.style.color = color;
+      const dot = resultBox.querySelector('.lr-dot');
+      if (dot) dot.style.background = color;
+      resultText.textContent = level;
+
+      pill.style.display = 'inline-block';
+      pill.style.color = color;
+      pill.style.background = hexToRgba(color, 0.15);
+      pill.textContent = level.replace('Risco ', '');
+    }
+
+    function hexToRgba(hex, alpha) {
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+
+    function closePanel() {
+      panel.style.display = 'none';
+      if (activeGroupBtn) { activeGroupBtn.classList.remove('active'); activeGroupBtn = null; }
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // DASHBOARD — Riscos avaliados, por nível e por grupo
+    // ═══════════════════════════════════════════════════════════
+
+    const LEVEL_ORDER = ["Risco Crítico", "Risco Elevado", "Risco Moderado", "Risco Baixo"];
+
+    function renderDashboard() {
+      const container = document.getElementById('dashboard');
+      if (!container) return;
+
+      // savedAssessments has already been sanitized on load/save, but we
+      // defensively re-check here too, since this function can be the very
+      // first thing that runs (before loadAssessments resolves).
+      const entries = Object.values(savedAssessments).filter(e =>
+        e && e.group && DATA[e.group] &&
+        typeof e.riskIndex === 'number' &&
+        DATA[e.group].risks[e.riskIndex]
+      );
+
+      if (entries.length === 0) {
+        container.innerHTML = `
+      <div class="dash-empty">
+        Nenhum risco avaliado ainda. Selecione Impacto e Probabilidade em qualquer risco para começar a preencher este painel.
+      </div>
+    `;
+        return;
+      }
+
+      // Count by level
+      const countByLevel = {};
+      LEVEL_ORDER.forEach(l => countByLevel[l] = 0);
+      entries.forEach(e => { countByLevel[e.level] = (countByLevel[e.level] || 0) + 1; });
+
+      // Group by level -> group -> [entries]
+      const byLevel = {};
+      LEVEL_ORDER.forEach(l => byLevel[l] = {});
+      entries.forEach(e => {
+        if (!byLevel[e.level]) return; // unknown level label, skip safely
+        if (!byLevel[e.level][e.group]) byLevel[e.level][e.group] = [];
+        byLevel[e.level][e.group].push(e);
+      });
+
+      let html = `
+    <div class="dash-summary">
+      ${LEVEL_ORDER.map(level => `
+        <div class="dash-stat" style="border-color:${LEVEL_COLOR[level]}">
+          <div class="dash-stat-num" style="color:${LEVEL_COLOR[level]}">${countByLevel[level]}</div>
+          <div class="dash-stat-label">${level}</div>
+        </div>
+      `).join('')}
+      <div class="dash-stat dash-stat-total">
+        <div class="dash-stat-num">${entries.length}</div>
+        <div class="dash-stat-label">Total avaliado</div>
+      </div>
+    </div>
+  `;
+
+      LEVEL_ORDER.forEach(level => {
+        const groups = byLevel[level];
+        const groupNames = Object.keys(groups);
+        if (groupNames.length === 0) return;
+
+        html += `
+      <div class="dash-level-block">
+        <div class="dash-level-header" style="color:${LEVEL_COLOR[level]};border-color:${LEVEL_COLOR[level]}">
+          <span class="dash-level-dot" style="background:${LEVEL_COLOR[level]}"></span>
+          ${level} <span class="dash-level-count">(${countByLevel[level]})</span>
+        </div>
+        <div class="dash-groups">
+          ${groupNames.map(g => `
+            <div class="dash-group-card">
+              <div class="dash-group-name">${DATA[g].icon} ${g}</div>
+              <ul class="dash-risk-list">
+                ${groups[g].map(entry => {
+          const riskObj = DATA[entry.group].risks[entry.riskIndex];
+          const measures = riskObj ? riskObj.measures : [];
+          const dashUid = 'dash-' + entry.uid;
+          return `
+                    <li>
+                      <div class="dash-risk-item" onclick="toggleDashMeasures('${dashUid}')">
+                        <span class="dash-risk-chev" id="chev-${dashUid}">▸</span>
+                        <span class="dash-risk-text">${entry.risk}</span>
+                        <span class="dash-risk-count">${measures.length} medida${measures.length > 1 ? 's' : ''}</span>
+                      </div>
+                      <div class="dash-measures" id="measures-${dashUid}">
+                        ${measures.map((m, mi) => buildMeasureCardHTML(m, `${dashUid}-${mi}`)).join('')}
+                      </div>
+                    </li>
+                  `;
+        }).join('')}
+              </ul>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+      });
+
+      container.innerHTML = html;
+    }
+
+    function toggleDashMeasures(dashUid) {
+      const box = document.getElementById('measures-' + dashUid);
+      const chev = document.getElementById('chev-' + dashUid);
+      if (!box) return;
+      const isOpen = box.classList.contains('open');
+      box.classList.toggle('open', !isOpen);
+      if (chev) chev.classList.toggle('open', !isOpen);
+    }
+
+    function reiniciarAnalise() {
+      var msg = 'Atenção: ao clicar em OK, todas as classificações de Impacto, Probabilidade e Nível de Risco preenchidas serão removidas e os campos retornarão para Selecione... Deseja continuar?';
+      if (!confirm(msg)) return;
+
+      // 1. Limpar dados persistidos
+      savedAssessments = {};
+      saveAssessments();
+
+      // 2. Zerar todos os selects de impacto e probabilidade visíveis
+      var allSelects = document.getElementsByTagName('select');
+      for (var i = 0; i < allSelects.length; i++) {
+        var sel = allSelects[i];
+        var sid = sel.id || '';
+        if (sid.indexOf('impact-') === 0 || sid.indexOf('prob-') === 0) {
+          sel.value = '';
+        }
+      }
+
+      // 3. Esconder todos os resultados de nível e pills
+      var allEls = document.getElementsByTagName('*');
+      for (var j = 0; j < allEls.length; j++) {
+        var el = allEls[j];
+        var eid = el.id || '';
+        if (eid.indexOf('result-') === 0) {
+          el.style.display = 'none';
+        }
+        if (eid.indexOf('pill-') === 0) {
+          el.style.display = 'none';
+          el.textContent = '';
+        }
+      }
+
+      // 4. Fechar seções abertas de nível de risco
+      var sections = document.getElementsByClassName('expand-section');
+      for (var k = 0; k < sections.length; k++) {
+        sections[k].classList.remove('open');
+      }
+      var actionBtns = document.getElementsByClassName('action-btn');
+      for (var b = 0; b < actionBtns.length; b++) {
+        actionBtns[b].classList.remove('open');
+      }
+
+      // 5. Atualizar painel
+      renderDashboard();
+    }
+
+    // ─── Exportação Excel ───
+    function exportToExcel() {
+      const entries = Object.values(savedAssessments).filter(e =>
+        e && e.group && DATA[e.group] &&
+        typeof e.riskIndex === 'number' &&
+        DATA[e.group].risks[e.riskIndex]
+      );
+
+      if (entries.length === 0) {
+        alert('Nenhum risco avaliado para exportar. Preencha ao menos um Impacto e Probabilidade antes de exportar.');
+        return;
+      }
+
+      // Montar linhas: uma linha por medida de cada risco avaliado
+      const rows = [];
+      const LEVEL_ORDER_LOCAL = ["Risco Crítico", "Risco Elevado", "Risco Moderado", "Risco Baixo"];
+
+      // Ordenar por nível de risco
+      const sorted = [...entries].sort((a, b) => {
+        const ai = LEVEL_ORDER_LOCAL.indexOf(a.level);
+        const bi = LEVEL_ORDER_LOCAL.indexOf(b.level);
+        return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+      });
+
+      sorted.forEach(entry => {
+        const riskObj = DATA[entry.group].risks[entry.riskIndex];
+        if (!riskObj) return;
+
+        riskObj.measures.forEach(m => {
+          const detalhe = MEASURE_DETAILS[m.id] || '';
+          rows.push({
+            'Grupo de Risco': entry.group,
+            'Risco': entry.risk,
+            'Nível de Risco': entry.level,
+            'Medida': `${m.id} ${m.text}`,
+            'Detalhamento da Medida': detalhe,
+          });
+        });
+      });
+
+      if (typeof XLSX === 'undefined') {
+        alert('Biblioteca de exportação não disponível. Verifique sua conexão com a internet e tente novamente.');
+        return;
+      }
+
+      const ws = XLSX.utils.json_to_sheet(rows);
+
+      // Estilo mínimo: larguras de colunas
+      ws['!cols'] = [
+        { wch: 40 },  // Grupo de Risco
+        { wch: 45 },  // Risco
+        { wch: 18 },  // Nível de Risco
+        { wch: 60 },  // Medida
+        { wch: 100 }, // Detalhamento
+      ];
+
+      // Aplicar estilo preto e branco: cabeçalhos em negrito, sem cores de fundo
+      const range = XLSX.utils.decode_range(ws['!ref']);
+      for (let C = range.s.c; C <= range.e.c; C++) {
+        const headerCell = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (!ws[headerCell]) continue;
+        ws[headerCell].s = {
+          font: { bold: true, color: { rgb: '000000' } },
+          fill: { fgColor: { rgb: 'FFFFFF' } },
+          border: {
+            top: { style: 'thin', color: { rgb: '000000' } },
+            bottom: { style: 'thin', color: { rgb: '000000' } },
+            left: { style: 'thin', color: { rgb: '000000' } },
+            right: { style: 'thin', color: { rgb: '000000' } },
+          },
+          alignment: { wrapText: true, vertical: 'top' },
+        };
+      }
+      // Bordas e wrap para células de dados
+      for (let R = range.s.r + 1; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+          const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+          if (!ws[cellAddr]) ws[cellAddr] = { t: 's', v: '' };
+          ws[cellAddr].s = {
+            font: { color: { rgb: '000000' } },
+            border: {
+              top: { style: 'thin', color: { rgb: '000000' } },
+              bottom: { style: 'thin', color: { rgb: '000000' } },
+              left: { style: 'thin', color: { rgb: '000000' } },
+              right: { style: 'thin', color: { rgb: '000000' } },
+            },
+            alignment: { wrapText: true, vertical: 'top' },
+          };
+        }
+      }
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Riscos Avaliados');
+
+      const now = new Date();
+      const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+      XLSX.writeFile(wb, `Analise_Riscos_PPSI_${stamp}.xlsx`, { cellStyles: true });
+    }
+
+    // ─── Init ───
+    try {
+      renderDashboard();
+      loadAssessments();
+    } catch (err) {
+      console.error('Erro na inicialização do painel:', err);
+      const dash = document.getElementById('dashboard');
+      if (dash) {
+        dash.innerHTML = `<div class="dash-empty">Ocorreu um erro ao carregar o painel: ${err.message}</div>`;
+      }
+    }
+
+  </script>
+</body>
+
+</html>
